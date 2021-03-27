@@ -10,7 +10,6 @@ export const UserContext = createContext<UserStateType>({user: null});
 export default function UserProvider(props :any) {
 
     const [userState, setUserState] = useState<UserStateType>({ user: null})
-
     useEffect(() => {
         auth.onAuthStateChanged((authenticatedUser) => {
                 setUserState({ user: authenticatedUser})

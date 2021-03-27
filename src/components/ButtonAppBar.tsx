@@ -8,6 +8,10 @@ import IconButton from '@material-ui/core/IconButton';
 import MenuIcon from '@material-ui/icons/Menu';
 import Menu from '@material-ui/core/Menu';
 import MenuItem from '@material-ui/core/MenuItem';
+import Login from './Login';
+import Logout from './Logout';
+import { DispatchAction, DisplayType } from './models';
+import { Drawer } from '@material-ui/core';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -24,7 +28,7 @@ const useStyles = makeStyles((theme: Theme) =>
 );
 
 
-export default function ButtonAppBar({onOpen} : {onOpen: React.Dispatch<React.SetStateAction<boolean>> }) {
+export default function ButtonAppBar({onOpen, dispatchDisplay} : {onOpen: React.Dispatch<React.SetStateAction<boolean>>, dispatchDisplay: React.Dispatch<DispatchAction> }) {
   const classes = useStyles();
 
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
@@ -39,6 +43,16 @@ export default function ButtonAppBar({onOpen} : {onOpen: React.Dispatch<React.Se
     onOpen( (show) => !show);
   };
 
+  const handleCloseOrder = () => {
+    setAnchorEl(null);
+    dispatchDisplay({type: "order"});
+  }
+
+  const handleCloseCustomer = () => {
+    setAnchorEl(null);
+    dispatchDisplay({type: "customer"});
+  }
+
   return (
     <div>
       <AppBar position="static">
@@ -46,18 +60,20 @@ export default function ButtonAppBar({onOpen} : {onOpen: React.Dispatch<React.Se
           <IconButton edge="start" className={classes.menuButton} color="inherit" aria-label="menu" onClick={handleClick}>
             <MenuIcon />
           </IconButton>
-          <Menu
+          <Drawer
             id="simple-menu"
-            anchorEl={anchorEl}
+            anchor="top"
             open={Boolean(anchorEl)}
             onClose={handleClose}
             >
-                <MenuItem onClick={handleClose}>Customer</MenuItem>
-                <MenuItem onClick={handleClose}>Order</MenuItem>
-            </Menu>
+                <MenuItem onClick={handleCloseOrder} onKeyDown={handleCloseOrder}>Order</MenuItem>
+                <MenuItem onClick={handleCloseCustomer} onKeyDown={handleCloseCustomer}>Customer</MenuItem>
+            </Drawer>
           <Typography variant="h6" className={classes.title}>
             Forms
           </Typography>
+          <Login></Login>
+          <Logout></Logout>
         </Toolbar>
       </AppBar>
     </div>

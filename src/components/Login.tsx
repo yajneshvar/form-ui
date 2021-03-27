@@ -1,8 +1,7 @@
 
 import React from 'react';
 import { UserContext } from '../providers/UserProvider';
-import LoginButton from './LoginButton';
-import { createStyles, Grid, makeStyles, Theme } from '@material-ui/core';
+import { Button, createStyles, Grid, makeStyles, Theme } from '@material-ui/core';
 import { GoogleSignIn }  from "../login/Firebase";
 
 
@@ -28,15 +27,15 @@ export default function Login() {
     return (
         <UserContext.Consumer>
             {(userState) => (
-                        <Grid container className={classes.padding}>
-                        <Grid>User is {userState.user?.email}</Grid>
+                       <>
                          { userState.user == null &&  (
-                                <Grid>
-                                    <button onClick={googleSignIn}>Google Sign In</button>
-                                </Grid>
+                            
+                                    <Button  variant="contained" color="secondary" onClick={googleSignIn} disableElevation>Sign In With Google</Button>
+                                
                                 
                         ) }
-                        </Grid>
+                        </>
+                     
             )}
         </UserContext.Consumer>
     )

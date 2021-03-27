@@ -1,18 +1,17 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { Reducer, useCallback, useEffect, useReducer, useState } from 'react';
 import TextField from '@material-ui/core/TextField';
 import Button from '@material-ui/core/Button';
 import Grid from '@material-ui/core/Grid';
 import Autocomplete from '@material-ui/lab/Autocomplete'
 import { makeStyles, createStyles, Theme } from '@material-ui/core/styles';
-import { Chip, Link, Paper, Typography, Select, MenuItem, Menu, InputLabel, FormControl, FormControlLabel, Checkbox } from '@material-ui/core';
+import { Chip, Paper, Select, MenuItem, InputLabel, FormControl, FormControlLabel, Checkbox, Typography, CircularProgress } from '@material-ui/core';
 import { UserContext, UserStateType } from '../providers/UserProvider';
+import { DispatchAction } from './models';
+import { red } from '@material-ui/core/colors';
+
 
 const useStyles = makeStyles( (theme: Theme) => createStyles(
     {
-        root: {
-            width: '100%',
-            listStyle: 'none'
-        },
         paper: {
             padding: theme.spacing(4)
         },
@@ -20,14 +19,10 @@ const useStyles = makeStyles( (theme: Theme) => createStyles(
             width: 'inherit',
         },
         customer: {
-            width: 'inherit',
-            justifyContent: "center",
             padding: theme.spacing(2)
         },
         book: {
-            width: 'inherit',
-            justifyContent: "center",
-            padding: theme.spacing(2)
+            justifyContent: "center"
         },
         bookSelector: {
             alignItems: 'center'
@@ -40,11 +35,13 @@ const useStyles = makeStyles( (theme: Theme) => createStyles(
             justifyContent: 'center',
             flexWrap: 'wrap',
             listStyle: 'none',
-            padding: theme.spacing(0.5),
             margin: 0,
           },
         formControl: {
             minWidth: 120
+        },
+        errorMessage: {
+            color: theme.palette.error.main
         }
     }
 )
@@ -65,6 +62,8 @@ export function Order(props: any) {
 
     let userState: UserStateType = props.userState
 
+    let url = process.env.REACT_APP_API_URL ||  "http://localhost:8080";
+
     interface CustomerType {
         id: String,
         firstName: string,
@@ -84,6 +83,37 @@ export function Order(props: any) {
         quantity: number
     }
 
+    let errorInitialState = {
+        customer: null,
+        books: null,
+        channel: null
+    }
+
+    interface ErrorMessage {
+        customer: string | null,
+        books: string | null,
+        channel: string | null
+    }
+
+    let errorReducer = (state: ErrorMessage, action: DispatchAction) => {
+        switch(action.type) {
+            case 'customerError':
+                return {...state, customer: "Please select a customer"};
+            case 'booksError':
+                return {...state, books: "Please add a book"};
+            case 'channelError': 
+                return {...state, channel: "Please select a channel"};
+            case 'customer':
+                return {...state, customer: null};
+            case 'books':
+                return {...state, books: null};
+            case 'channel': 
+                return {...state, channel: null};
+            default:
+                throw new Error();
+        }
+    }
+
     let [customer, setCustomer] = useState<CustomerType | null>( null);
     let [customers, setCustomers] = useState<CustomerType[]>([]);
     let [book, setBook] = useState<BookType | null>(null);
@@ -98,11 +128,9 @@ export function Order(props: any) {
     let [channel, setChannel] = useState("");
     let [paymentNotes, setPaymentNotes] = useState("")
     let [deliveryNotes, setDeliveryNotes] = useState("")
-
-    let intialValues = {
-        customerId: '',
-        books: []
-    }
+    let [errors, errorDispatch] = useReducer<Reducer<ErrorMessage, DispatchAction>, ErrorMessage>(errorReducer, errorInitialState, (d) => d)
+    let [submitting, setSubmitting] = useState(false)
+    let [submitMessage, setSubmitMessage] = useState("")
 
     let storageEventHandler = useCallback((event: StorageEvent) => {
         let newCustomers: CustomerType[] = []
@@ -124,7 +152,7 @@ export function Order(props: any) {
     }, []);
 
     useEffect(() => {
-        fetch('http://localhost:8080/users', {
+        fetch(`${url}/users`, {
             method: 'GET'
         }).then( (response) => {
             if (response.ok) {
@@ -136,7 +164,7 @@ export function Order(props: any) {
     }, [])
 
     useEffect(() => {
-        fetch('http://localhost:8080/books', {
+        fetch(`${url}/books`, {
             method: 'GET'
         }).then( (response) => {
             if (response.ok) {
@@ -154,7 +182,7 @@ export function Order(props: any) {
     }, [])
 
     useEffect(() => {
-        fetch('http://localhost:8080/channels', {
+        fetch(`${url}/channels`, {
             method: "GET"
         }).then( (response) => {
             if (response.ok) {
@@ -168,16 +196,17 @@ export function Order(props: any) {
     let onTypeSelected =  (event: React.ChangeEvent<{ value: unknown }>) => {
         let newType = event.target.value as string
         setSelectedType(newType);
+        setBook(null);
         if (newType !== "") {
             setFilteredBookList(bookList.filter( b => b.type == newType))
         }
-        
       };
 
-    let onChannelSelected = (event: React.ChangeEvent<{ value: unknown }>) => {
+    let onChannelSelected = useCallback((event: React.ChangeEvent<{ value: unknown }>) => {
+        errorDispatch({type: 'channel'});
         let channelSelection = event.target.value as string
         setChannel(channelSelection);
-      };
+      },[errors]);
 
     let getTypes = useCallback( () => {
         let uniqueTypes = new Set(bookList.map(book => book.type));
@@ -195,16 +224,9 @@ export function Order(props: any) {
         setQuantity(value)
     }, [setQuantity])
 
-    // let onSubmit = (event:any) => {
-    //     event.preventDefault()
-    //     setTimeout(() => {
-    //         alert(JSON.stringify({
-    //             books
-    //         }, null, 2));
-    //       }, 400);
-    // }
 
     let onAddBook = useCallback(() => {
+        errorDispatch({type: 'books'})
         let itemToupdate = books.find( (items) => items.book.code === book?.code)
         if (book !== null && itemToupdate === undefined) {
             setBooks([...books, {book, quantity}])
@@ -212,7 +234,7 @@ export function Order(props: any) {
             itemToupdate.quantity += quantity
             setBooks([...books])
         }
-    }, [books, setBooks, book, quantity]);
+    }, [books, setBooks, book, quantity, errors]);
 
     let onClickAdd = (event: any) => {
         event.preventDefault();
@@ -231,6 +253,11 @@ export function Order(props: any) {
         setDeliveryNotes(event.target.value);
       };
 
+    let onCustomerChange = useCallback((event: any, newValue: any) => {
+        errorDispatch({type: 'customer'})
+        setCustomer(newValue);
+    },[errors])
+
     let getFormValue = useCallback(() => {
         return {
             customerId: customer?.id,
@@ -245,9 +272,33 @@ export function Order(props: any) {
 
     let classes = useStyles();
 
-    let onFormSubmit = (event: any) => {
+    let onFormSubmit = useCallback((event: any) => {
         event.preventDefault();
-        fetch("http://localhost:8080/order", {
+        let values = getFormValue();
+        let valid = true;
+
+        if (values.customerId == undefined) {
+            errorDispatch({type: 'customerError'})
+            valid = false;
+        }
+
+        if (values.channel == undefined || values.channel == null || values.channel == "") {
+            errorDispatch({type: 'channelError'})
+            valid = false;
+        }
+
+        if (values.books.length == 0) {
+            errorDispatch({type: 'booksError'})
+            valid = false;
+        }
+
+        if (!valid) {
+            return;
+        }
+
+        setSubmitting(true)
+        
+        fetch(`${url}/order`, {
             method: "POST",
             mode: 'cors',
             headers: {
@@ -256,152 +307,156 @@ export function Order(props: any) {
             body: JSON.stringify(getFormValue())
         }).then( response => {
             if (response.ok) {
-                alert("Success")
+                setSubmitMessage("Success")
             } else {
-                alert("Failed")
+                setSubmitMessage("Failed to submit order")
             }
+            setSubmitting(false)
         }).catch( err => {
-            alert("Failed to submit order")
+            setSubmitMessage("Failed to submit order")
+            setSubmitting(false)
         })
-    }
+    },[errors, errorDispatch])
 
     return (  
-        <>
-            <Typography variant="h1" component="h2" gutterBottom> New Orders Form</Typography>
-            <form className={classes.form} >
-            <Grid className={classes.root} alignItems="center" justify="space-around" spacing={2}>
-            <Grid item xs={12} md={6} justify="space-around">
-                        <Autocomplete
-                            className={classes.customer}
-                            options={customers as CustomerType[]}
-                            value={customer}
-                            onChange={(event: any, newValue: any) => {
-                                setCustomer(newValue);
-                            }}
-                            renderOption={( option: any ) => (<> 
-                                    <span>{`${option.firstName} - ${option.postalCode}`}</span>
-                            </> )}
-                            renderInput={(params) => (
-                                <TextField
-                                    {...params}
-                                    label="Choose a Customer"
-                                    variant="outlined"
-                                />
-                            )}
-                            getOptionLabel={ (option) => (option.firstName) }
-                            getOptionSelected={ (option, value) => (
-                                option.firstName === value.firstName &&
-                                option.email === value.email
-                            )}
-                        />
-                
+            <Grid container xs={12} md={12} lg={12} alignItems="baseline" justify="center">
+                <form className={classes.form} >
+                <Grid container xs={12} md={12} lg={12} alignItems="baseline" spacing={2}>
+                <Grid item xs={12} md={12} lg={12} >
+                    <Autocomplete
+                        options={customers as CustomerType[]}
+                        value={customer}
+                        onChange={onCustomerChange}
+                        renderOption={( option: any ) => (<> 
+                                <span>{`${option.firstName} - ${option.postalCode}`}</span>
+                        </> )}
+                        renderInput={(params) => (
+                            <TextField
+                                {...params}
+                                label="Choose a Customer"
+                                variant="outlined"
+                            />
+                        )}
+                        getOptionLabel={ (option) => (option.firstName) }
+                        getOptionSelected={ (option, value) => (
+                            option.firstName === value.firstName &&
+                            option.email === value.email
+                        )}
+                    />
+                    {errors.customer && (<Typography className={classes.errorMessage} variant="caption" display="block" gutterBottom>{errors.customer}</Typography>)}
+                </Grid>
+                <Grid item xs={12} md={6}>
+                            <FormControl variant="outlined" className={classes.formControl} fullWidth >
+                                <InputLabel htmlFor="language-select">Language</InputLabel>
+                                <Select value={selectedType} onChange={onTypeSelected} id="language-select" fullWidth={true}>
+                                    { types.map( type =>  (<MenuItem value={type}>{type}</MenuItem>))}
+                                </Select>
+                            </FormControl>
+
+                </Grid>
+                <Grid item xs={12} md={6}>
+                    <Autocomplete
+                        className={classes.book}
+                        options={filteredBookList as BookType[]}
+                        value={book}
+                        onChange={(event: any, newValue: any) => {
+                            setBook(newValue);
+                        }}
+                        renderOption={( option: any ) => (<> 
+                                <span>{`${option.title}`}</span>
+                        </> )}
+                        renderInput={(params) => (
+                            <TextField
+                                {...params}
+                                label="Choose a Book"
+                                variant="outlined"
+                            />
+                        )}
+                        getOptionLabel={ (option) => (`${option.title}`) }
+                        getOptionSelected={ (option, value) => (
+                            option.code === value.code
+                        )}
+                    />
+                    {errors.books && (<Typography className={classes.errorMessage} variant="caption" display="block" gutterBottom>{errors.books}</Typography>)}
+                </Grid>
+                <Grid item xs={12} md={6}>
+                    <TextField
+                        fullWidth
+                        variant="outlined"
+                        id="quantity"
+                        name="quantity"
+                        label="Book Quantity"
+                        type="number"
+                        value={quantity}
+                        onChange={onQuantityChange}
+                    />
+                </Grid>
+                <Grid item xs={12} md={6}>
+                    <Button fullWidth variant="contained" color="secondary" onClick={onClickAdd}>Add Book</Button>
+                </Grid>
+                <Grid item xs={12} md={12}>
+                            {books.length > 0 && 
+                                    <Paper variant="outlined" className={classes.bookList}>
+                                    {books.map((data: any) => {
+                                        return(
+                                            <li key={data.book.code}>
+                                                <Chip
+                                                    label={`${data.book.title} - ${data.quantity}`}
+                                                    onDelete={onDeleteBook(data)}
+                                                    className={classes.padding}
+                                                ></Chip>
+                                            </li>
+                                        )
+                                    })}
+                                </Paper>
+                            
+                            }
+
+                        </Grid>
+
+                <Grid item xs={6} className={classes.padding} >
+                    <FormControl variant="outlined" className={classes.formControl}>
+                        <InputLabel htmlFor="channel-select">Channel</InputLabel>
+                        <Select value={channel} onChange={onChannelSelected} id="channel-select">
+                            {channels.map( ch => (<MenuItem value={ch}>{ch}</MenuItem>))}
+                        </Select>
+                    </FormControl>
+                    {errors.channel && (<Typography className={classes.errorMessage} variant="caption" display="block" gutterBottom>{errors.channel}</Typography>)}
                 </Grid>
 
-                <Grid container item xs={12} md={12} direction="row" spacing={2} className={classes.bookSelector} justify="space-around">
-                    <Grid item xs={2} className={classes.padding}>
-                        <FormControl className={classes.formControl}>
-                            <InputLabel htmlFor="language-select">Language</InputLabel>
-                            <Select value={selectedType} onChange={onTypeSelected} id="language-select" fullWidth={true}>
-                                { types.map( type =>  (<MenuItem value={type}>{type}</MenuItem>))}
-                            </Select>
-                        </FormControl>
+                <Grid item xs={6} className={classes.padding} >
+                    <FormControlLabel
+                        control={<Checkbox checked={delivery} onChange={onDeliverySelected}></Checkbox>}
+                        label="Delivery Required"
+                    ></FormControlLabel>
 
-                    </Grid>
-                    <Grid item xs={6}>
-                        <Autocomplete
-                            className={classes.book}
-                            options={filteredBookList as BookType[]}
-                            value={book}
-                            onChange={(event: any, newValue: any) => {
-                                setBook(newValue);
-                            }}
-                            renderOption={( option: any ) => (<> 
-                                    <span>{`${option.title}`}</span>
-                            </> )}
-                            renderInput={(params) => (
-                                <TextField
-                                    {...params}
-                                    label="Choose a Book"
-                                    variant="outlined"
-                                />
-                            )}
-                            getOptionLabel={ (option) => (`${option.title}`) }
-                            getOptionSelected={ (option, value) => (
-                                option.code === value.code
-                            )}
-                        />
-                    </Grid>
-                    <Grid item xs={2}>
-                        <TextField
-                            fullWidth
-                            id="quantity"
-                            name="quantity"
-                            label="Book Quantity"
-                            type="number"
-                            value={quantity}
-                            onChange={onQuantityChange}
-                        />
-                    </Grid>
-                    <Grid item>
-                        <Button variant="contained" color="secondary" onClick={onClickAdd}>Add</Button>
-                    </Grid>
-                    <Grid item xs={12}>
-                        {books.length > 0 && 
-                                <Paper variant="outlined" className={classes.bookList}>
-                                {books.map((data: any) => {
-                                    return(
-                                        <li key={data.book.code}>
-                                            <Chip
-                                                label={`${data.book.title} - ${data.quantity}`}
-                                                onDelete={onDeleteBook(data)}
-                                                className={classes.padding}
-                                            ></Chip>
-                                        </li>
-                                    )
-                                })}
-                            </Paper>
+                </Grid>
+
+                <Grid item xs={6} className={classes.padding}>
+                    <TextField  value={paymentNotes} onChange={onPaymentNotesChange}  id="payment-notes" placeholder="Payment Notes"></TextField>
                         
-                        }
-
-                    </Grid>
                 </Grid>
 
-            </Grid>
-
-            <Grid item xs={2} className={classes.padding} >
-                <FormControl className={classes.formControl}>
-                    <InputLabel htmlFor="channel-select">Channel</InputLabel>
-                    <Select value={channel} onChange={onChannelSelected} id="channel-select">
-                        {channels.map( ch => (<MenuItem value={ch}>{ch}</MenuItem>))}
-                    </Select>
-                </FormControl>
-            </Grid>
-
-            <Grid item className={classes.padding}>
-                <FormControlLabel
-                    control={<Checkbox checked={delivery} onChange={onDeliverySelected}></Checkbox>}
-                    label="Delivery Required"
-                ></FormControlLabel>
+                <Grid item xs={6} >
                 { delivery && 
-                    <TextField value={deliveryNotes} onChange={onDeliveryNotesChange} id="delivery-notes" placeholder="Delivery Notes"></TextField>
-                }
+                        <TextField value={deliveryNotes} onChange={onDeliveryNotesChange} id="delivery-notes" placeholder="Delivery Notes"></TextField>
+                    }
+                </Grid>
+
+            <Grid item xs={6} className={classes.padding}>
+                <Button variant="contained" color="primary" type="submit" onClick={onFormSubmit}>
+                Submit
+                </Button>
             </Grid>
-
-            <Grid item className={classes.padding}>
-                <TextField  value={paymentNotes} onChange={onPaymentNotesChange}  id="payment-notes" placeholder="Payment Notes"></TextField>
-                      
+            <Grid item xs={6}>
+                {submitting && (<CircularProgress></CircularProgress>)}
             </Grid>
-
-
-            
-          <Grid item className={classes.padding}>
-            <Button variant="contained" color="primary" type="submit" onClick={onFormSubmit}>
-              Submit
-            </Button>
-          </Grid>
-      </form>
-
-        </>
+            <Grid item xs={12}>
+                <Typography>{submitMessage}</Typography>
+            </Grid>
+            </Grid>
+        </form>
+        </Grid>
 
     )
 

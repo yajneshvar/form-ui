@@ -1,20 +1,14 @@
-import React from 'react';
-import logo from './logo.svg';
+import React, { Reducer, useReducer } from 'react';
 import User from './components/User';
 import Order from './components/Order';
 import ButtonAppBar from './components/ButtonAppBar';
 import './App.css';
-import Button from '@material-ui/core/Button';
-import Menu from '@material-ui/core/Menu';
-import MenuItem from '@material-ui/core/MenuItem';
-import Grid from '@material-ui/core/Grid'
 
 import { makeStyles } from '@material-ui/core/styles';
-import { inherits } from 'util';
-import { findByLabelText } from '@testing-library/react';
 import Login from './components/Login';
-import UserProvider from './providers/UserProvider';
-import Logout from './components/Logout';
+import UserProvider, { UserContext } from './providers/UserProvider';
+import { DispatchAction, DisplayType } from './components/models';
+import { Card, CardContent, Grid, Paper, Typography } from '@material-ui/core';
 
 
 
@@ -22,6 +16,9 @@ const useStyles = makeStyles(
     {
         body: {
             marginTop: '20px',
+        },
+        loginPage: {
+
         }
     }
 )
@@ -30,32 +27,62 @@ function App() {
 
   let classes = useStyles();
 
+
+function reducer(prevState: DisplayType, action: DispatchAction): DisplayType {
+
+  switch(action.type) {
+    case 'order':
+      return {order: true, customer: false}
+    case 'customer':
+      return {order: false, customer: true}
+    default:
+      throw Error("Undefined display " + action.type)
+  }
+
+}
+
+  let [displayState, dispatchDisplay] = useReducer<Reducer<DisplayType, DispatchAction>, DisplayType>( reducer, {order: true, customer: false}, (d: DisplayType) => d)
+
   let [showUser, setShowUser] = React.useState(false);
 
   return (
     <> 
-    <ButtonAppBar onOpen={setShowUser}></ButtonAppBar>
-    <Grid
-      container
-      justify="center"
-      alignItems="center"
-      alignContent="center"
-      className={classes.body}
-    >
-      
-        
         <UserProvider>
-  
-            <Login></Login>
-            <Logout></Logout>
-            {showUser ? <User></User> : <Order></Order>}
-       
+          <UserContext.Consumer>
+            { (userState) => {
+                if (userState.user == null) {
+                  return (
+                    <div>
+                    <ButtonAppBar onOpen={setShowUser} dispatchDisplay={dispatchDisplay}></ButtonAppBar>
+                    <Grid container className={classes.body} justify="center">
+                      <Grid item xs={6} >
+                        <Card>
+                          <CardContent>
+                            <Typography>Please login to proceed</Typography>
+                            <Login></Login>
+                          </CardContent>
+                        </Card>
+                      </Grid>
+                    </Grid>
+                    </div>
+                  )
+                }
+                return (
+                  <>
+                    <ButtonAppBar onOpen={setShowUser} dispatchDisplay={dispatchDisplay}></ButtonAppBar>
+                    <div className={classes.body}>
+                      {
+                        displayState.order && !displayState.customer && <Order></Order>
+                      }
+                      {
+                      !displayState.order && displayState.customer && <User></User>
+                      }
+                    </div>
+                  </>
+                )
+            }}
+          </UserContext.Consumer>
         </UserProvider>
-
-      
-
-    </Grid>
-    
     </>
   );
 }

@@ -18,7 +18,7 @@ export default function Logout() {
         GoogleLogout();
     }
     if (userState.user !== null) {
-        return (<Button onClick={onClick} >Logout</Button>)
+        return (<Button variant="contained" color="secondary" onClick={onClick} disableElevation>Logout</Button>)
     } else {
         return (<></>)
     }

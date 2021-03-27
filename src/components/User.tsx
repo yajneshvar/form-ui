@@ -1,10 +1,11 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useState } from 'react';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
 import TextField from '@material-ui/core/TextField';
 import Button from '@material-ui/core/Button';
 import Grid from '@material-ui/core/Grid'
 import { UserContext, UserStateType } from '../providers/UserProvider';
+import { CircularProgress, Typography } from '@material-ui/core';
 
 export default function UserForm() {
 
@@ -18,6 +19,10 @@ export default function UserForm() {
 
 function User(props: any) {
 
+  let [submitting, setSubmitting] = useState(false);
+  let [submitMessage, setSubmitMessage] = useState("");
+
+  let url = process.env.REACT_APP_API_URL ||  "http://localhost:8080";
     let intialValues = {
         firstName: '',
         lastName: '',
@@ -35,7 +40,8 @@ function User(props: any) {
 
     let onSubmit = (values: any) => {
       let user = {creator: props.userState.user?.email, ...values}
-      fetch('http://localhost:8080/user', {
+      setSubmitting(true);
+      fetch(`${url}/user`, {
         method: "POST",
         mode: 'cors',
         headers: {
@@ -52,13 +58,17 @@ function User(props: any) {
               }
               users.push(savedUser)
               localStorage.setItem("latestCustomer", JSON.stringify(users))
-              alert(JSON.stringify(savedUser))
+              
+              setSubmitMessage("Success")
+              setSubmitting(false);
             })
         } else {
-          alert("Failed to submit :(")
+          setSubmitMessage("Failed to submit")
+          setSubmitting(false);
         }
       }).catch(err => {
-          alert("Failed to submit");
+          setSubmitMessage("Failed to submit")
+          setSubmitting(false);
       })
     }
 
@@ -197,11 +207,18 @@ function User(props: any) {
             helperText={formik.touched.cellPhone && formik.errors.cellPhone} 
           />
         </Grid>
-          <div>
-            <Button type="submit">
+        <Grid item xs={6}>
+            <Button variant="contained" color="primary" type="submit">
               Submit
             </Button>
-          </div>
+        </Grid>
+        <Grid item xs={6}>
+          {submitting && (<CircularProgress></CircularProgress>)}
+        </Grid>
+        <Grid item xs={6}>
+          {submitMessage && <Typography>{submitMessage}</Typography>}
+        </Grid>
+
       </form>
       </Grid>
       
