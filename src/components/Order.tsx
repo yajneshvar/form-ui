@@ -258,8 +258,11 @@ export function Order(props: any) {
         setCustomer(newValue);
     },[errors])
 
-    let getFormValue = useCallback(() => {
-        return {
+    let classes = useStyles();
+
+    let onFormSubmit = useCallback((event: any) => {
+        event.preventDefault();
+        let values = {
             customerId: customer?.id,
             books: books.map( b => {return {...b.book, quantity: b.quantity}}),
             channel,
@@ -267,14 +270,7 @@ export function Order(props: any) {
             deliveryNotes,
             paymentNotes,
             creator: userState?.user?.email
-        }
-    }, [books, channel, customer, delivery, deliveryNotes, paymentNotes, quantity])
-
-    let classes = useStyles();
-
-    let onFormSubmit = useCallback((event: any) => {
-        event.preventDefault();
-        let values = getFormValue();
+        };
         let valid = true;
 
         if (values.customerId == undefined) {
@@ -304,7 +300,7 @@ export function Order(props: any) {
             headers: {
               'Content-Type': 'application/json',
             },
-            body: JSON.stringify(getFormValue())
+            body: JSON.stringify(values)
         }).then( response => {
             if (response.ok) {
                 setSubmitMessage("Success")
@@ -316,7 +312,7 @@ export function Order(props: any) {
             setSubmitMessage("Failed to submit order")
             setSubmitting(false)
         })
-    },[errors, errorDispatch])
+    },[errors, errorDispatch, books, channel, customer, delivery, deliveryNotes, paymentNotes, quantity])
 
     return (  
             <Grid container xs={12} md={12} lg={12} alignItems="baseline" justify="center">
@@ -450,8 +446,6 @@ export function Order(props: any) {
             </Grid>
             <Grid item xs={6}>
                 {submitting && (<CircularProgress></CircularProgress>)}
-            </Grid>
-            <Grid item xs={12}>
                 <Typography>{submitMessage}</Typography>
             </Grid>
             </Grid>

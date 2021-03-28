@@ -214,8 +214,6 @@ function User(props: any) {
         </Grid>
         <Grid item xs={6}>
           {submitting && (<CircularProgress></CircularProgress>)}
-        </Grid>
-        <Grid item xs={6}>
           {submitMessage && <Typography>{submitMessage}</Typography>}
         </Grid>
 
