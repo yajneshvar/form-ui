@@ -1,10 +1,10 @@
-import React, { useCallback, useState } from 'react';
+import React, { useState } from 'react';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
 import TextField from '@material-ui/core/TextField';
 import Button from '@material-ui/core/Button';
 import Grid from '@material-ui/core/Grid'
-import { UserContext, UserStateType } from '../providers/UserProvider';
+import { UserContext } from '../providers/UserProvider';
 import { CircularProgress, Typography } from '@material-ui/core';
 
 export default function UserForm() {

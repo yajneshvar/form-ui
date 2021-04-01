@@ -7,7 +7,6 @@ import { makeStyles, createStyles, Theme } from '@material-ui/core/styles';
 import { Chip, Paper, Select, MenuItem, InputLabel, FormControl, FormControlLabel, Checkbox, Typography, CircularProgress } from '@material-ui/core';
 import { UserContext, UserStateType } from '../providers/UserProvider';
 import { DispatchAction } from './models';
-import { red } from '@material-ui/core/colors';
 
 
 const useStyles = makeStyles( (theme: Theme) => createStyles(
@@ -134,7 +133,7 @@ export function Order(props: any) {
 
     let storageEventHandler = useCallback((event: StorageEvent) => {
         let newCustomers: CustomerType[] = []
-        if (event.key == "latestCustomer" && event.newValue != null) {
+        if (event.key === "latestCustomer" && event.newValue !== null) {
             newCustomers = JSON.parse(event.newValue) as CustomerType[]
         }
         setCustomers([...newCustomers, ...customers])
@@ -161,7 +160,7 @@ export function Order(props: any) {
         }).catch(err => {
             alert("Failed to fetch customers")
         })
-    }, [])
+    }, [url])
 
     useEffect(() => {
         fetch(`${url}/books`, {
@@ -179,7 +178,7 @@ export function Order(props: any) {
                 })
             }
         })
-    }, [])
+    }, [url])
 
     useEffect(() => {
         fetch(`${url}/channels`, {
@@ -191,14 +190,14 @@ export function Order(props: any) {
         }).catch( err => {
             alert("Failed to fetch channels")
         })
-    },[])
+    },[url])
 
     let onTypeSelected =  (event: React.ChangeEvent<{ value: unknown }>) => {
         let newType = event.target.value as string
         setSelectedType(newType);
         setBook(null);
         if (newType !== "") {
-            setFilteredBookList(bookList.filter( b => b.type == newType))
+            setFilteredBookList(bookList.filter( b => b.type === newType))
         }
       };
 
@@ -206,14 +205,8 @@ export function Order(props: any) {
         errorDispatch({type: 'channel'});
         let channelSelection = event.target.value as string
         setChannel(channelSelection);
-      },[errors]);
+      },[]);
 
-    let getTypes = useCallback( () => {
-        let uniqueTypes = new Set(bookList.map(book => book.type));
-        let uniqTypeList: string[] = []
-        uniqueTypes.forEach ( type => uniqTypeList.push(type))
-        setTypes(uniqTypeList);
-    }, [bookList])
 
     let onDeliverySelected = (event: React.ChangeEvent<HTMLInputElement>, checked: boolean) => {
         setDelivery(del => !del);
@@ -234,7 +227,7 @@ export function Order(props: any) {
             itemToupdate.quantity += quantity
             setBooks([...books])
         }
-    }, [books, setBooks, book, quantity, errors]);
+    }, [books, setBooks, book, quantity]);
 
     let onClickAdd = (event: any) => {
         event.preventDefault();
@@ -256,7 +249,7 @@ export function Order(props: any) {
     let onCustomerChange = useCallback((event: any, newValue: any) => {
         errorDispatch({type: 'customer'})
         setCustomer(newValue);
-    },[errors])
+    },[])
 
     let classes = useStyles();
 
@@ -273,17 +266,17 @@ export function Order(props: any) {
         };
         let valid = true;
 
-        if (values.customerId == undefined) {
+        if (values.customerId === undefined) {
             errorDispatch({type: 'customerError'})
             valid = false;
         }
 
-        if (values.channel == undefined || values.channel == null || values.channel == "") {
+        if (values.channel === undefined || values.channel === null || values.channel === "") {
             errorDispatch({type: 'channelError'})
             valid = false;
         }
 
-        if (values.books.length == 0) {
+        if (values.books.length === 0) {
             errorDispatch({type: 'booksError'})
             valid = false;
         }
@@ -312,7 +305,7 @@ export function Order(props: any) {
             setSubmitMessage("Failed to submit order")
             setSubmitting(false)
         })
-    },[errors, errorDispatch, books, channel, customer, delivery, deliveryNotes, paymentNotes, quantity])
+    },[ errorDispatch, books, channel, customer, delivery, deliveryNotes, paymentNotes, url, userState])
 
     return (  
             <Grid container xs={12} md={12} lg={12} alignItems="baseline" justify="center">

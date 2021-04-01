@@ -8,7 +8,7 @@ import { makeStyles } from '@material-ui/core/styles';
 import Login from './components/Login';
 import UserProvider, { UserContext } from './providers/UserProvider';
 import { DispatchAction, DisplayType } from './components/models';
-import { Card, CardContent, Grid, Paper, Typography } from '@material-ui/core';
+import { Card, CardContent, Grid, Typography } from '@material-ui/core';
 
 
 
@@ -43,8 +43,6 @@ function reducer(prevState: DisplayType, action: DispatchAction): DisplayType {
 
   let [displayState, dispatchDisplay] = useReducer<Reducer<DisplayType, DispatchAction>, DisplayType>( reducer, {order: true, customer: false}, (d: DisplayType) => d)
 
-  let [showUser, setShowUser] = React.useState(false);
-
   return (
     <> 
         <UserProvider>
@@ -53,7 +51,7 @@ function reducer(prevState: DisplayType, action: DispatchAction): DisplayType {
                 if (userState.user == null) {
                   return (
                     <div>
-                    <ButtonAppBar onOpen={setShowUser} dispatchDisplay={dispatchDisplay}></ButtonAppBar>
+                    <ButtonAppBar dispatchDisplay={dispatchDisplay}></ButtonAppBar>
                     <Grid container className={classes.body} justify="center">
                       <Grid item xs={6} >
                         <Card>
@@ -69,7 +67,7 @@ function reducer(prevState: DisplayType, action: DispatchAction): DisplayType {
                 }
                 return (
                   <>
-                    <ButtonAppBar onOpen={setShowUser} dispatchDisplay={dispatchDisplay}></ButtonAppBar>
+                    <ButtonAppBar dispatchDisplay={dispatchDisplay}></ButtonAppBar>
                     <div className={classes.body}>
                       {
                         displayState.order && !displayState.customer && <Order></Order>
