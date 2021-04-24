@@ -213,7 +213,7 @@ export function Order(props: any) {
     }
 
     let onQuantityChange = useCallback((event: any) => {
-        let value = event.target.value
+        let value: number = parseInt(event.target.value)
         setQuantity(value)
     }, [setQuantity])
 
