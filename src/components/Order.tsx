@@ -4,9 +4,10 @@ import Button from '@material-ui/core/Button';
 import Grid from '@material-ui/core/Grid';
 import Autocomplete from '@material-ui/lab/Autocomplete'
 import { makeStyles, createStyles, Theme } from '@material-ui/core/styles';
-import { Chip, Paper, Select, MenuItem, InputLabel, FormControl, FormControlLabel, Checkbox, Typography, CircularProgress } from '@material-ui/core';
+import {  Select, MenuItem, InputLabel, FormControl, FormControlLabel, Checkbox, Typography, CircularProgress } from '@material-ui/core';
 import { UserContext, UserStateType } from '../providers/UserProvider';
 import { DispatchAction } from './models';
+import { BookDropdown } from './BookDropdown';
 
 
 const useStyles = makeStyles( (theme: Theme) => createStyles(
@@ -113,16 +114,10 @@ export function Order(props: any) {
         }
     }
 
+    let [books, setBooks] = useState<SelectedBookQuantityType[]>([]);
     let [customer, setCustomer] = useState<CustomerType | null>( null);
     let [customers, setCustomers] = useState<CustomerType[]>([]);
-    let [book, setBook] = useState<BookType | null>(null);
-    let [quantity, setQuantity] = useState(1);
     let [delivery, setDelivery] = useState(true);
-    let [books, setBooks] = useState<SelectedBookQuantityType[]>([]);
-    let [filteredBookList, setFilteredBookList] = useState<BookType[]>([]);
-    let [bookList, setBooksList] = useState<BookType[]>([]);
-    let [types, setTypes] = useState<string[]>([]);
-    let [selectedType, setSelectedType] = useState<string>("");
     let [channels, setChannels] = useState<string[]>([]);
     let [channel, setChannel] = useState("");
     let [paymentNotes, setPaymentNotes] = useState("")
@@ -163,24 +158,6 @@ export function Order(props: any) {
     }, [url])
 
     useEffect(() => {
-        fetch(`${url}/books`, {
-            method: 'GET'
-        }).then( (response) => {
-            if (response.ok) {
-                response.json().then( listOfBooks => {
-                    setBooksList(listOfBooks)
-                    setFilteredBookList(listOfBooks)
-                    let retrievedBooks = listOfBooks as BookType[];
-                    let uniqueTypes = new Set(retrievedBooks.map(book => book.type));
-                    let uniqTypeList: string[] = []
-                    uniqueTypes.forEach ( type => uniqTypeList.push(type))
-                    setTypes(uniqTypeList);
-                })
-            }
-        })
-    }, [url])
-
-    useEffect(() => {
         fetch(`${url}/channels`, {
             method: "GET"
         }).then( (response) => {
@@ -192,15 +169,6 @@ export function Order(props: any) {
         })
     },[url])
 
-    let onTypeSelected =  (event: React.ChangeEvent<{ value: unknown }>) => {
-        let newType = event.target.value as string
-        setSelectedType(newType);
-        setBook(null);
-        if (newType !== "") {
-            setFilteredBookList(bookList.filter( b => b.type === newType))
-        }
-      };
-
     let onChannelSelected = useCallback((event: React.ChangeEvent<{ value: unknown }>) => {
         errorDispatch({type: 'channel'});
         let channelSelection = event.target.value as string
@@ -210,32 +178,6 @@ export function Order(props: any) {
 
     let onDeliverySelected = (event: React.ChangeEvent<HTMLInputElement>, checked: boolean) => {
         setDelivery(del => !del);
-    }
-
-    let onQuantityChange = useCallback((event: any) => {
-        let value: number = parseInt(event.target.value)
-        setQuantity(value)
-    }, [setQuantity])
-
-
-    let onAddBook = useCallback(() => {
-        errorDispatch({type: 'books'})
-        let itemToupdate = books.find( (items) => items.book.code === book?.code)
-        if (book !== null && itemToupdate === undefined) {
-            setBooks([...books, {book, quantity}])
-        } else if (itemToupdate) {
-            itemToupdate.quantity += quantity
-            setBooks([...books])
-        }
-    }, [books, setBooks, book, quantity]);
-
-    let onClickAdd = (event: any) => {
-        event.preventDefault();
-        onAddBook();
-    }
-
-    let onDeleteBook = (event: any) =>  () => {
-        setBooks(books.filter((item: any) => item.book.code !== event.book.code))
     }
 
     let onPaymentNotesChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -334,75 +276,14 @@ export function Order(props: any) {
                     />
                     {errors.customer && (<Typography className={classes.errorMessage} variant="caption" display="block" gutterBottom>{errors.customer}</Typography>)}
                 </Grid>
-                <Grid item xs={12} md={6}>
-                            <FormControl variant="outlined" className={classes.formControl} fullWidth >
-                                <InputLabel htmlFor="language-select">Language</InputLabel>
-                                <Select value={selectedType} onChange={onTypeSelected} id="language-select" fullWidth={true}>
-                                    { types.map( type =>  (<MenuItem value={type}>{type}</MenuItem>))}
-                                </Select>
-                            </FormControl>
-
-                </Grid>
-                <Grid item xs={12} md={6}>
-                    <Autocomplete
-                        className={classes.book}
-                        options={filteredBookList as BookType[]}
-                        value={book}
-                        onChange={(event: any, newValue: any) => {
-                            setBook(newValue);
-                        }}
-                        renderOption={( option: any ) => (<> 
-                                <span>{`${option.title}`}</span>
-                        </> )}
-                        renderInput={(params) => (
-                            <TextField
-                                {...params}
-                                label="Choose a Book"
-                                variant="outlined"
-                            />
-                        )}
-                        getOptionLabel={ (option) => (`${option.title}`) }
-                        getOptionSelected={ (option, value) => (
-                            option.code === value.code
-                        )}
-                    />
-                    {errors.books && (<Typography className={classes.errorMessage} variant="caption" display="block" gutterBottom>{errors.books}</Typography>)}
-                </Grid>
-                <Grid item xs={12} md={6}>
-                    <TextField
-                        fullWidth
-                        variant="outlined"
-                        id="quantity"
-                        name="quantity"
-                        label="Book Quantity"
-                        type="number"
-                        value={quantity}
-                        onChange={onQuantityChange}
-                    />
-                </Grid>
-                <Grid item xs={12} md={6}>
-                    <Button fullWidth variant="contained" color="secondary" onClick={onClickAdd}>Add Book</Button>
-                </Grid>
-                <Grid item xs={12} md={12}>
-                            {books.length > 0 && 
-                                    <Paper variant="outlined" className={classes.bookList}>
-                                    {books.map((data: any) => {
-                                        return(
-                                            <li key={data.book.code}>
-                                                <Chip
-                                                    label={`${data.book.title} - ${data.quantity}`}
-                                                    onDelete={onDeleteBook(data)}
-                                                    className={classes.padding}
-                                                ></Chip>
-                                            </li>
-                                        )
-                                    })}
-                                </Paper>
-                            
-                            }
-
-                        </Grid>
-
+                <BookDropdown
+                    onChange = {() => { errorDispatch({type: 'books'}) }}
+                    books = {books}
+                    setBooks = {setBooks}
+                    errors = {{
+                        books: errors.books
+                    }}
+                />
                 <Grid item xs={6} className={classes.padding} >
                     <FormControl variant="outlined" className={classes.formControl}>
                         <InputLabel htmlFor="channel-select">Channel</InputLabel>
