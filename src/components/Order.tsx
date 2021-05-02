@@ -117,10 +117,10 @@ export function Order(props: any) {
     let [books, setBooks] = useState<SelectedBookQuantityType[]>([]);
     let [customer, setCustomer] = useState<CustomerType | null>( null);
     let [customers, setCustomers] = useState<CustomerType[]>([]);
-    let [delivery, setDelivery] = useState(true);
+    let [delivery, setDelivery] = useState(false);
     let [channels, setChannels] = useState<string[]>([]);
     let [channel, setChannel] = useState("");
-    let [paymentNotes, setPaymentNotes] = useState("")
+    let [additionalNotes, setAdditionaltNotes] = useState("")
     let [deliveryNotes, setDeliveryNotes] = useState("")
     let [errors, errorDispatch] = useReducer<Reducer<ErrorMessage, DispatchAction>, ErrorMessage>(errorReducer, errorInitialState, (d) => d)
     let [submitting, setSubmitting] = useState(false)
@@ -181,7 +181,7 @@ export function Order(props: any) {
     }
 
     let onPaymentNotesChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-        setPaymentNotes(event.target.value);
+        setAdditionaltNotes(event.target.value);
       };
 
     let onDeliveryNotesChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -203,7 +203,7 @@ export function Order(props: any) {
             channel,
             delivery,
             deliveryNotes,
-            paymentNotes,
+            paymentNotes: additionalNotes,
             creator: userState?.user?.email
         };
         let valid = true;
@@ -247,7 +247,7 @@ export function Order(props: any) {
             setSubmitMessage("Failed to submit order")
             setSubmitting(false)
         })
-    },[ errorDispatch, books, channel, customer, delivery, deliveryNotes, paymentNotes, url, userState])
+    },[ errorDispatch, books, channel, customer, delivery, deliveryNotes, additionalNotes, url, userState])
 
     return (  
             <Grid container xs={12} md={12} lg={12} alignItems="baseline" justify="center">
@@ -303,7 +303,7 @@ export function Order(props: any) {
                 </Grid>
 
                 <Grid item xs={6} className={classes.padding}>
-                    <TextField  value={paymentNotes} onChange={onPaymentNotesChange}  id="payment-notes" placeholder="Payment Notes"></TextField>
+                    <TextField  value={additionalNotes} onChange={onPaymentNotesChange}  id="payment-notes" placeholder="Additional Notes"></TextField>
                         
                 </Grid>
 
