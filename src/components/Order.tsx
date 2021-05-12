@@ -4,10 +4,11 @@ import Button from '@material-ui/core/Button';
 import Grid from '@material-ui/core/Grid';
 import Autocomplete from '@material-ui/lab/Autocomplete'
 import { makeStyles, createStyles, Theme } from '@material-ui/core/styles';
-import {  Select, MenuItem, InputLabel, FormControl, FormControlLabel, Checkbox, Typography, CircularProgress } from '@material-ui/core';
+import {  Select, MenuItem, InputLabel, FormControl, FormControlLabel, Checkbox, Typography, CircularProgress, TextareaAutosize, Snackbar, SnackbarCloseReason } from '@material-ui/core';
 import { UserContext, UserStateType } from '../providers/UserProvider';
 import { DispatchAction } from './models';
 import { BookDropdown } from './BookDropdown';
+import SuccessOrFailureAlert from './SuccesOrFailureAlert';
 
 
 const useStyles = makeStyles( (theme: Theme) => createStyles(
@@ -124,7 +125,9 @@ export function Order(props: any) {
     let [deliveryNotes, setDeliveryNotes] = useState("")
     let [errors, errorDispatch] = useReducer<Reducer<ErrorMessage, DispatchAction>, ErrorMessage>(errorReducer, errorInitialState, (d) => d)
     let [submitting, setSubmitting] = useState(false)
+    let [open, setOpen] = useState(false)
     let [submitMessage, setSubmitMessage] = useState("")
+    let [success, setSuccess] = useState(false)
 
     let storageEventHandler = useCallback((event: StorageEvent) => {
         let newCustomers: CustomerType[] = []
@@ -180,11 +183,11 @@ export function Order(props: any) {
         setDelivery(del => !del);
     }
 
-    let onPaymentNotesChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    let onPaymentNotesChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
         setAdditionaltNotes(event.target.value);
       };
 
-    let onDeliveryNotesChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    let onDeliveryNotesChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
         setDeliveryNotes(event.target.value);
       };
 
@@ -192,6 +195,14 @@ export function Order(props: any) {
         errorDispatch({type: 'customer'})
         setCustomer(newValue);
     },[])
+
+    const handleAlertClose = (event: any, reason: SnackbarCloseReason) => {
+        if (reason === 'clickaway') {
+          return;
+        }
+    
+        setOpen(false);
+    };
 
     let classes = useStyles();
 
@@ -237,6 +248,8 @@ export function Order(props: any) {
             },
             body: JSON.stringify(values)
         }).then( response => {
+            setOpen(true)
+            setSuccess(response.ok)
             if (response.ok) {
                 setSubmitMessage("Success")
             } else {
@@ -244,6 +257,8 @@ export function Order(props: any) {
             }
             setSubmitting(false)
         }).catch( err => {
+            setOpen(true)
+            setSuccess(false)
             setSubmitMessage("Failed to submit order")
             setSubmitting(false)
         })
@@ -284,7 +299,7 @@ export function Order(props: any) {
                         books: errors.books
                     }}
                 />
-                <Grid item xs={6} className={classes.padding} >
+                <Grid item xs={12} md={6} className={classes.padding} >
                     <FormControl variant="outlined" className={classes.formControl}>
                         <InputLabel htmlFor="channel-select">Channel</InputLabel>
                         <Select value={channel} onChange={onChannelSelected} id="channel-select">
@@ -299,28 +314,31 @@ export function Order(props: any) {
                         control={<Checkbox checked={delivery} onChange={onDeliverySelected}></Checkbox>}
                         label="Delivery Required"
                     ></FormControlLabel>
-
-                </Grid>
-
-                <Grid item xs={6} className={classes.padding}>
-                    <TextField  value={additionalNotes} onChange={onPaymentNotesChange}  id="payment-notes" placeholder="Additional Notes"></TextField>
-                        
-                </Grid>
-
-                <Grid item xs={6} >
-                { delivery && 
-                        <TextField value={deliveryNotes} onChange={onDeliveryNotesChange} id="delivery-notes" placeholder="Delivery Notes"></TextField>
+                                    { delivery && 
+                        <TextareaAutosize value={deliveryNotes} onChange={onDeliveryNotesChange} id="delivery-notes" rowsMin={3} placeholder="Delivery Notes"></TextareaAutosize>
                     }
+
+                </Grid>
+
+                <Grid item xs={12} md={6} className={classes.padding} alignItems="flex-start">
+                    <TextareaAutosize aria-label="additonal-notes" value={additionalNotes} onChange={onPaymentNotesChange} rowsMin={3} placeholder="Additional Notes"/>       
                 </Grid>
 
             <Grid item xs={6} className={classes.padding}>
                 <Button variant="contained" color="primary" type="submit" onClick={onFormSubmit}>
-                Submit
+                    Submit
                 </Button>
             </Grid>
-            <Grid item xs={6}>
+            <Grid container item xs={6} md={12} justify="center" spacing={2}>
                 {submitting && (<CircularProgress></CircularProgress>)}
-                <Typography>{submitMessage}</Typography>
+            </Grid>
+            <Grid item xs={12}>
+                <SuccessOrFailureAlert
+                    open={open}
+                    onClose={handleAlertClose}
+                    success={success}
+                    message={submitMessage}
+                />
             </Grid>
             </Grid>
         </form>

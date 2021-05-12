@@ -5,7 +5,8 @@ import TextField from '@material-ui/core/TextField';
 import Button from '@material-ui/core/Button';
 import Grid from '@material-ui/core/Grid'
 import { UserContext } from '../providers/UserProvider';
-import { CircularProgress, Typography } from '@material-ui/core';
+import { CircularProgress, SnackbarCloseReason, Typography } from '@material-ui/core';
+import SuccesOrFailureAlert from './SuccesOrFailureAlert';
 
 export default function UserForm() {
 
@@ -21,6 +22,7 @@ function User(props: any) {
 
   let [submitting, setSubmitting] = useState(false);
   let [submitMessage, setSubmitMessage] = useState("");
+  let [openNotification, setOpenNotification] = useState(false);
 
   let url = process.env.REACT_APP_API_URL ||  "http://localhost:8080";
     let intialValues = {
@@ -37,6 +39,14 @@ function User(props: any) {
         cellPhone: '',
         homePhone: ''
     }
+
+    const handleAlertClose = (event: any, reason: SnackbarCloseReason) => {
+      if (reason === 'clickaway') {
+        return;
+      }
+  
+      setOpenNotification(false);
+  };
 
     let onSubmit = (values: any) => {
       let user = {creator: props.userState.user?.email, ...values}
@@ -66,9 +76,11 @@ function User(props: any) {
           setSubmitMessage("Failed to submit")
           setSubmitting(false);
         }
+        setOpenNotification(true);
       }).catch(err => {
           setSubmitMessage("Failed to submit")
           setSubmitting(false);
+          setOpenNotification(true);
       })
     }
 
@@ -212,11 +224,16 @@ function User(props: any) {
               Submit
             </Button>
         </Grid>
-        <Grid item xs={6}>
+        <Grid container item xs={12} justify="center" >
           {submitting && (<CircularProgress></CircularProgress>)}
-          {submitMessage && <Typography>{submitMessage}</Typography>}
         </Grid>
-
+        <Grid item xs={12}>
+          <SuccesOrFailureAlert 
+            open={openNotification}
+            message={submitMessage}
+            onClose={handleAlertClose}
+          />
+        </Grid>
       </form>
       </Grid>
       
