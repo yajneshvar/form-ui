@@ -5,7 +5,7 @@ import TextField from '@material-ui/core/TextField';
 import Button from '@material-ui/core/Button';
 import Grid from '@material-ui/core/Grid'
 import { UserContext } from '../providers/UserProvider';
-import { CircularProgress, SnackbarCloseReason, Typography } from '@material-ui/core';
+import { CircularProgress, SnackbarCloseReason } from '@material-ui/core';
 import SuccesOrFailureAlert from './SuccesOrFailureAlert';
 
 export default function UserForm() {

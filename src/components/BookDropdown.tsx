@@ -134,28 +134,48 @@ export function BookDropdown(props: any) {
                     </FormControl>
                 </Grid>
                 <Grid item xs={12} md={6}>
-                    <Autocomplete
-                        className={classes.book}
-                        options={filteredBookList as BookType[]}
-                        value={book}
-                        onChange={(event: any, newValue: any) => {
-                            setBook(newValue);
-                        }}
-                        renderOption={( option: any ) => (<> 
-                                <span>{`${option.title}`}</span>
-                        </> )}
-                        renderInput={(params) => (
-                            <TextField
-                                {...params}
-                                label="Choose a Book"
-                                variant="outlined"
-                            />
-                        )}
-                        getOptionLabel={ (option) => (`${option.title}`) }
-                        getOptionSelected={ (option, value) => (
-                            option.code === value.code
-                        )}
-                    />
+                    {
+                        selectedType ? 
+                        (<Autocomplete
+                            className={classes.book}
+                            options={filteredBookList as BookType[]}
+                            value={book}
+                            onChange={(event: any, newValue: any) => {
+                                setBook(newValue);
+                            }}
+                            renderOption={( option: any ) => (<> 
+                                    <span>{`${option.title}`}</span>
+                            </> )}
+                            renderInput={(params) => {
+                                return (
+                                    <TextField
+                                        {...params}
+                                        label="Choose a Book"
+                                        variant="outlined"
+                                    />
+                                )
+                            }}
+                            getOptionLabel={ (option) => (`${option.title}`) }
+                            getOptionSelected={ (option, value) => (
+                                option.code === value.code
+                            )}
+                        />) :
+                        (<Autocomplete
+                            options={[]}
+                            disabled
+                            renderInput={ (params) => {
+                                return (
+                                    <TextField
+                                        {...params}
+                                        label="Please select a language filter before choosing a book"
+                                        variant="outlined"
+                                    />
+                                )
+                            }}
+                        
+                        />)
+
+                    }
                     {errors.books && (<Typography className={classes.errorMessage} variant="caption" display="block" gutterBottom>{errors.books}</Typography>)}
                 </Grid>
                 <Grid item xs={12} md={6}>
