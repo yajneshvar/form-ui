@@ -1,14 +1,14 @@
-import React, { Reducer, useReducer } from 'react';
+import React from 'react';
 import User from './components/User';
 import Order from './components/Order';
-import ButtonAppBar from './components/ButtonAppBar';
+import Header from './components/Header';
 import './App.css';
 
 import { makeStyles } from '@material-ui/core/styles';
-import Login from './components/Login';
-import UserProvider, { UserContext } from './providers/UserProvider';
-import { DispatchAction, DisplayType } from './components/models';
-import { Card, CardContent, Grid, Typography } from '@material-ui/core';
+import { LoginPage } from './components/Login';
+import UserProvider, { PrivateRoute } from './providers/UserProvider';
+import { Grid } from '@material-ui/core';
+import {BrowserRouter as Router , NavLink, Route, Switch} from "react-router-dom";
 
 
 
@@ -27,62 +27,44 @@ function App() {
 
   let classes = useStyles();
 
+  return (
+    <>
+      <UserProvider>
+        <Router>
+          <div>
+            <Header></Header>
+            <Switch>
+              <Route exact path="/">
+                <HomePage></HomePage>
+              </Route>
+              <PrivateRoute exact path="/order">
+                <Order/>
+              </PrivateRoute>
+              <PrivateRoute exact path="/user">
+                <User/>  
+              </PrivateRoute>
+              <Route exact path="/login">
+                <LoginPage/>
+              </Route>
+            </Switch>
+          </div>
+        </Router>
+      </UserProvider>
+    </>
 
-function reducer(prevState: DisplayType, action: DispatchAction): DisplayType {
-
-  switch(action.type) {
-    case 'order':
-      return {order: true, customer: false}
-    case 'customer':
-      return {order: false, customer: true}
-    default:
-      throw Error("Undefined display " + action.type)
-  }
-
+  )
 }
 
-  let [displayState, dispatchDisplay] = useReducer<Reducer<DisplayType, DispatchAction>, DisplayType>( reducer, {order: true, customer: false}, (d: DisplayType) => d)
+function HomePage() {
 
   return (
-    <> 
-        <UserProvider>
-          <UserContext.Consumer>
-            { (userState) => {
-                if (userState.user == null) {
-                  return (
-                    <div>
-                    <ButtonAppBar dispatchDisplay={dispatchDisplay}></ButtonAppBar>
-                    <Grid container className={classes.body} justify="center">
-                      <Grid item xs={6} >
-                        <Card>
-                          <CardContent>
-                            <Typography>Please login to proceed</Typography>
-                            <Login></Login>
-                          </CardContent>
-                        </Card>
-                      </Grid>
-                    </Grid>
-                    </div>
-                  )
-                }
-                return (
-                  <>
-                    <ButtonAppBar dispatchDisplay={dispatchDisplay}></ButtonAppBar>
-                    <div className={classes.body}>
-                      {
-                        displayState.order && !displayState.customer && <Order></Order>
-                      }
-                      {
-                      !displayState.order && displayState.customer && <User></User>
-                      }
-                    </div>
-                  </>
-                )
-            }}
-          </UserContext.Consumer>
-        </UserProvider>
-    </>
-  );
+    <Grid container direction="column" justify="center" alignItems="center">
+      <Grid item xs={6}> <NavLink to="/order">Order</NavLink> </Grid>
+      <Grid item xs={6}> <NavLink to="/user">User</NavLink> </Grid>
+  </Grid>
+
+  )
+
 }
 
 export default App;

@@ -8,8 +8,8 @@ import MenuIcon from '@material-ui/icons/Menu';
 import MenuItem from '@material-ui/core/MenuItem';
 import Login from './Login';
 import Logout from './Logout';
-import { DispatchAction } from './models';
 import { Drawer } from '@material-ui/core';
+import { NavLink } from 'react-router-dom';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -26,7 +26,7 @@ const useStyles = makeStyles((theme: Theme) =>
 );
 
 
-export default function ButtonAppBar({ dispatchDisplay} : {dispatchDisplay: React.Dispatch<DispatchAction> }) {
+export default function Header() {
   const classes = useStyles();
 
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
@@ -39,16 +39,6 @@ export default function ButtonAppBar({ dispatchDisplay} : {dispatchDisplay: Reac
   const handleClose = () => {
     setAnchorEl(null);
   };
-
-  const handleCloseOrder = () => {
-    setAnchorEl(null);
-    dispatchDisplay({type: "order"});
-  }
-
-  const handleCloseCustomer = () => {
-    setAnchorEl(null);
-    dispatchDisplay({type: "customer"});
-  }
 
   return (
     <div>
@@ -63,8 +53,8 @@ export default function ButtonAppBar({ dispatchDisplay} : {dispatchDisplay: Reac
             open={Boolean(anchorEl)}
             onClose={handleClose}
             >
-                <MenuItem onClick={handleCloseOrder} onKeyDown={handleCloseOrder}>Order</MenuItem>
-                <MenuItem onClick={handleCloseCustomer} onKeyDown={handleCloseCustomer}>Customer</MenuItem>
+                <MenuItem onClick={handleClose}><NavLink to="/order">Order</NavLink></MenuItem>
+                <MenuItem onClick={handleClose}><NavLink to="/user">Customer</NavLink></MenuItem>
             </Drawer>
           <Typography variant="h6" className={classes.title}>
             Forms

@@ -5,7 +5,7 @@ import Grid from '@material-ui/core/Grid';
 import Autocomplete from '@material-ui/lab/Autocomplete'
 import { makeStyles, createStyles, Theme } from '@material-ui/core/styles';
 import {  Select, MenuItem, InputLabel, FormControl, FormControlLabel, Checkbox, Typography, CircularProgress, TextareaAutosize, SnackbarCloseReason } from '@material-ui/core';
-import { UserContext, UserStateType } from '../providers/UserProvider';
+import { UserContext, AuthenticatedUser } from '../providers/UserProvider';
 import { DispatchAction } from './models';
 import { BookDropdown } from './BookDropdown';
 import SuccessOrFailureAlert from './SuccesOrFailureAlert';
@@ -61,7 +61,7 @@ export default function OrderForm() {
 
 export function Order(props: any) {
 
-    let userState: UserStateType = props.userState
+    let userState: AuthenticatedUser = props.userState
 
     let url = process.env.REACT_APP_API_URL ||  "http://localhost:8080";
 
@@ -215,7 +215,7 @@ export function Order(props: any) {
             delivery,
             deliveryNotes,
             paymentNotes: additionalNotes,
-            creator: userState?.user?.email
+            creator: userState?.email
         };
         let valid = true;
 
