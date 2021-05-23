@@ -7,7 +7,7 @@ import { makeStyles, createStyles, Theme } from '@material-ui/core/styles';
 import {  Select, MenuItem, InputLabel, FormControl, FormControlLabel, Checkbox, Typography, CircularProgress, TextareaAutosize, SnackbarCloseReason } from '@material-ui/core';
 import { UserContext, AuthenticatedUser } from '../providers/UserProvider';
 import { DispatchAction } from './models';
-import { BookDropdown } from './BookDropdown';
+import { BookDropdownAndSelectedBooks } from './BookDropdown';
 import SuccessOrFailureAlert from './SuccesOrFailureAlert';
 
 
@@ -291,7 +291,7 @@ export function Order(props: any) {
                     />
                     {errors.customer && (<Typography className={classes.errorMessage} variant="caption" display="block" gutterBottom>{errors.customer}</Typography>)}
                 </Grid>
-                <BookDropdown
+                <BookDropdownAndSelectedBooks 
                     onChange = {() => { errorDispatch({type: 'books'}) }}
                     books = {books}
                     setBooks = {setBooks}

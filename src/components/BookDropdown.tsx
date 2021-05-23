@@ -45,8 +45,71 @@ const useStyles = makeStyles( (theme: Theme) => createStyles(
 )
 )
 
+export function BookDropdownAndSelectedBooks(props: BookDropdownProps) {
+     
+    let setBooks =  props.setBooks;
+    let books = props.books;
+    let onDeleteBook = useCallback((book: SelectedBookQuantityType) => {
+        setBooks(books.filter((item: any) => item.book.code !== book.book.code))
+    },[books, setBooks]);
 
-export function BookDropdown(props: any) {
+    return (
+        <>
+            <BookDropdown {...props}/>
+            <SelectedBooks books={props.books} onDeleteBook={onDeleteBook}/>
+        </>
+    )
+}
+interface SelectedBooksProps {
+    books: SelectedBookQuantityType[],
+    onDeleteBook(book: SelectedBookQuantityType): void
+}
+
+function SelectedBooks(props: SelectedBooksProps) {
+    let classes = useStyles();
+    let books: SelectedBookQuantityType[]  = props.books;
+    let onDeleteBook = props.onDeleteBook;
+
+    return (
+
+        <Grid item xs={12} md={12}>
+            {books.length > 0 && 
+                    <Paper variant="outlined" className={classes.bookList}>
+                        {books.map((data: SelectedBookQuantityType) => {
+                            return(
+                                <li key={data.book.code}>
+                                    <Chip
+                                        label={`${data.book.title} - ${data.quantity}`}
+                                        onDelete={ (event: any) => {
+                                                onDeleteBook(data)
+                                            } 
+                                        }
+                                        className={classes.padding}
+                                    ></Chip>
+                                </li>
+                            )
+                        })}
+                    </Paper>
+            }
+        </Grid>
+
+    )    
+}
+
+interface BookError {
+    books: string | null
+}
+
+interface BookDropdownProps {
+    books: SelectedBookQuantityType[],
+    setBooks: (value: SelectedBookQuantityType[]) => void,
+    onChange: () => void,
+    errors: BookError
+}
+
+
+
+export function BookDropdown(props: BookDropdownProps) {
 
     let books: SelectedBookQuantityType[]  = props.books;
     let setBooks: (value: SelectedBookQuantityType[]) => void = props.setBooks;
@@ -64,7 +127,6 @@ export function BookDropdown(props: any) {
 
     let [book, setBook] = useState<BookType | null>(null);
     let [quantity, setQuantity] = useState(1);
-   // let [books, setBooks] = useState<SelectedBookQuantityType[]>([]);
     let [filteredBookList, setFilteredBookList] = useState<BookType[]>([]);
     let [bookList, setBooksList] = useState<BookType[]>([]);
     let [types, setTypes] = useState<string[]>([]);
@@ -117,10 +179,6 @@ export function BookDropdown(props: any) {
     let onClickAdd = (event: any) => {
         event.preventDefault();
         onAddBook();
-    }
-
-    let onDeleteBook = (event: any) =>  () => {
-        setBooks(books.filter((item: any) => item.book.code !== event.book.code))
     }
 
     return (
@@ -193,23 +251,6 @@ export function BookDropdown(props: any) {
                 </Grid>
                 <Grid item xs={12} md={6}>
                     <Button fullWidth variant="contained" color="secondary" onClick={onClickAdd}>Add Book</Button>
-                </Grid>
-                <Grid item xs={12} md={12}>
-                            {books.length > 0 && 
-                                    <Paper variant="outlined" className={classes.bookList}>
-                                        {books.map((data: any) => {
-                                            return(
-                                                <li key={data.book.code}>
-                                                    <Chip
-                                                        label={`${data.book.title} - ${data.quantity}`}
-                                                        onDelete={onDeleteBook(data)}
-                                                        className={classes.padding}
-                                                    ></Chip>
-                                                </li>
-                                            )
-                                        })}
-                                    </Paper>
-                            }
                 </Grid>
         </>
     )
