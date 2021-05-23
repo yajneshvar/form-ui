@@ -45,6 +45,7 @@ const useStyles = makeStyles( (theme: Theme) => createStyles(
 )
 )
 
+
 export function BookDropdown(props: any) {
 
     let books: SelectedBookQuantityType[]  = props.books;
@@ -129,7 +130,7 @@ export function BookDropdown(props: any) {
                     <FormControl variant="outlined" className={classes.formControl} fullWidth >
                         <InputLabel htmlFor="language-select">Language</InputLabel>
                         <Select value={selectedType} onChange={onTypeSelected} id="language-select" fullWidth={true}>
-                            { types.map( type =>  (<MenuItem value={type}>{type}</MenuItem>))}
+                            { types.map( type =>  (<MenuItem key={type} value={type}>{type}</MenuItem>))}
                         </Select>
                     </FormControl>
                 </Grid>

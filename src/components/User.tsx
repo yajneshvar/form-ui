@@ -23,6 +23,7 @@ function User(props: any) {
   let [submitting, setSubmitting] = useState(false);
   let [submitMessage, setSubmitMessage] = useState("");
   let [openNotification, setOpenNotification] = useState(false);
+  let [success, setSuccess] = useState(false);
 
   let url = process.env.REACT_APP_API_URL ||  "http://localhost:8080";
     let intialValues = {
@@ -46,10 +47,11 @@ function User(props: any) {
       }
   
       setOpenNotification(false);
+      setSuccess(false);
   };
 
     let onSubmit = (values: any) => {
-      let user = {creator: props.userState.user?.email, ...values}
+      let user = {creator: props.userState?.email, ...values}
       setSubmitting(true);
       fetch(`${url}/user`, {
         method: "POST",
@@ -69,18 +71,21 @@ function User(props: any) {
               users.push(savedUser)
               localStorage.setItem("latestCustomer", JSON.stringify(users))
               
-              setSubmitMessage("Success")
+              setSubmitMessage("Success");
+              setSuccess(true);
               setSubmitting(false);
             })
         } else {
           setSubmitMessage("Failed to submit")
           setSubmitting(false);
+          setSuccess(false);
         }
         setOpenNotification(true);
       }).catch(err => {
           setSubmitMessage("Failed to submit")
           setSubmitting(false);
           setOpenNotification(true);
+          setSuccess(false);
       })
     }
 
@@ -229,6 +234,7 @@ function User(props: any) {
         </Grid>
         <Grid item xs={12}>
           <SuccesOrFailureAlert 
+            success={success}
             open={openNotification}
             message={submitMessage}
             onClose={handleAlertClose}
