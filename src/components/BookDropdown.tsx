@@ -4,9 +4,9 @@ import Button from '@material-ui/core/Button';
 import Grid from '@material-ui/core/Grid';
 import HighlightOffIcon from '@material-ui/icons/HighlightOff'
 import Autocomplete from '@material-ui/lab/Autocomplete'
-import { DataGrid, GridCellParams, GridEditCellPropsParams, GridColDef, isOverflown  } from '@material-ui/data-grid';
+import { DataGrid, GridCellParams, GridEditCellPropsParams, isOverflown  } from '@material-ui/data-grid';
 import { makeStyles, createStyles, Theme } from '@material-ui/core/styles';
-import { Select, MenuItem, InputLabel, FormControl, Typography, Paper, Chip, Popper, IconButton, List } from '@material-ui/core';
+import { Select, MenuItem, InputLabel, FormControl, Typography, Paper, Popper, IconButton } from '@material-ui/core';
 
 interface GridCellExpandProps {
   value: string;
@@ -173,7 +173,7 @@ export function BookDropdownAndSelectedBooks(props: BookDropdownProps) {
     },[books, setBooks]);
 
     let onUpdateBookQuantity = useCallback((code: string, quantity: number) => {
-        let book = books.find( (it) => it.book.code == code);
+        let book = books.find( (it) => it.book.code === code);
         if (book !== undefined) {
             book.quantity = quantity;
             let filteredBooks = books.filter((bq) => bq.book.code !== code);

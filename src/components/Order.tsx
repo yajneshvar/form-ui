@@ -7,7 +7,7 @@ import { makeStyles, createStyles, Theme } from '@material-ui/core/styles';
 import {  Select, MenuItem, InputLabel, FormControl, FormControlLabel, Checkbox, Typography, CircularProgress, TextareaAutosize, SnackbarCloseReason } from '@material-ui/core';
 import { UserContext, AuthenticatedUser } from '../providers/UserProvider';
 import { DispatchAction } from './models';
-import { BookDropdownAndSelectedBooks, BookType, SelectedBookQuantityType } from './BookDropdown';
+import { BookDropdownAndSelectedBooks, SelectedBookQuantityType } from './BookDropdown';
 import SuccessOrFailureAlert from './SuccesOrFailureAlert';
 
 

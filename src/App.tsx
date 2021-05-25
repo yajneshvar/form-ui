@@ -3,8 +3,6 @@ import User from './components/User';
 import Order from './components/Order';
 import Header from './components/Header';
 import './App.css';
-
-import { makeStyles } from '@material-ui/core/styles';
 import { LoginPage } from './components/Login';
 import UserProvider, { PrivateRoute } from './providers/UserProvider';
 import { Grid } from '@material-ui/core';
@@ -12,21 +10,7 @@ import {BrowserRouter as Router , NavLink, Route, Switch} from "react-router-dom
 
 
 
-const useStyles = makeStyles(
-    {
-        body: {
-            marginTop: '20px',
-        },
-        loginPage: {
-
-        }
-    }
-)
-
 function App() {
-
-  let classes = useStyles();
-
   return (
     <>
       <UserProvider>
