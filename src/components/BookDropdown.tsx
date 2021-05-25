@@ -6,7 +6,7 @@ import HighlightOffIcon from '@material-ui/icons/HighlightOff'
 import Autocomplete from '@material-ui/lab/Autocomplete'
 import { DataGrid, GridCellParams, GridEditCellPropsParams, GridColDef, isOverflown  } from '@material-ui/data-grid';
 import { makeStyles, createStyles, Theme } from '@material-ui/core/styles';
-import { Select, MenuItem, InputLabel, FormControl, Typography, Paper, Chip, Popper, IconButton } from '@material-ui/core';
+import { Select, MenuItem, InputLabel, FormControl, Typography, Paper, Chip, Popper, IconButton, List } from '@material-ui/core';
 
 interface GridCellExpandProps {
   value: string;
@@ -195,21 +195,20 @@ interface SelectedBooksProps {
 }
 
 function SelectedBooks(props: SelectedBooksProps) {
-    let classes = useStyles();
     let booksAndQuantites: SelectedBookQuantityType[]  = props.books;
     let onDeleteBook = props.onDeleteBook;
     let onUpdateBookQuantity = props.onUpdated;
     let renderRemovableCell = (params: GridCellParams) => {
 
         return (
-            <IconButton>
+            <IconButton onClick={(event: any) => {onDeleteBook(params.id.toString())} }>
                  <HighlightOffIcon color="secondary"/>
             </IconButton>
             
         )
     }
 
-    let columns = [ {field: "id", type: 'string'}, {field: "Title", flex: 1, type: 'string', renderCell: renderCellExpand}, {field: "Quantity", flex: 0.5, editable: true, type: 'number'}, {field: "Remove", flex: 0.5, renderCell: renderRemovableCell}]
+    let columns = [ {field: "id", type: 'string'}, {field: "Title", width: 450, type: 'string', renderCell: renderCellExpand}, {field: "Quantity", width: 150, editable: true, type: 'number'}, {field: "Remove", width: 150, renderCell: renderRemovableCell}]
     let rows = booksAndQuantites.map( (bq) => {
         return {
             id: bq.book.code,
@@ -225,7 +224,6 @@ function SelectedBooks(props: SelectedBooksProps) {
             if (value) {
                 onUpdateBookQuantity(bookId as string, parseInt(value as string))
             }
-           
         }
     }
     
@@ -235,6 +233,7 @@ function SelectedBooks(props: SelectedBooksProps) {
                     columns={columns}
                     rows={rows}
                     onEditCellChangeCommitted={handleCellChange}
+                    pageSize={10}
                 />
             </div>
     )
