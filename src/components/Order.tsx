@@ -7,7 +7,7 @@ import { makeStyles, createStyles, Theme } from '@material-ui/core/styles';
 import {  Select, MenuItem, InputLabel, FormControl, FormControlLabel, Checkbox, Typography, CircularProgress, TextareaAutosize, SnackbarCloseReason } from '@material-ui/core';
 import { UserContext, AuthenticatedUser } from '../providers/UserProvider';
 import { DispatchAction } from './models';
-import { BookDropdownAndSelectedBooks } from './BookDropdown';
+import { BookDropdownAndSelectedBooks, BookType, SelectedBookQuantityType } from './BookDropdown';
 import SuccessOrFailureAlert from './SuccesOrFailureAlert';
 
 
@@ -72,17 +72,6 @@ export function Order(props: any) {
         postalCode: string,
         email: string
       }
-
-    interface BookType {
-        code: string,
-        title: string,
-        type: string
-    }
-
-    interface SelectedBookQuantityType {
-        book: BookType,
-        quantity: number
-    }
 
     let errorInitialState = {
         customer: null,

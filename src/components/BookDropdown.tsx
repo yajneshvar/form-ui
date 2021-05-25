@@ -2,19 +2,138 @@ import React, { useCallback, useEffect, useState } from 'react';
 import TextField from '@material-ui/core/TextField';
 import Button from '@material-ui/core/Button';
 import Grid from '@material-ui/core/Grid';
+import HighlightOffIcon from '@material-ui/icons/HighlightOff'
 import Autocomplete from '@material-ui/lab/Autocomplete'
+import { DataGrid, GridCellParams, GridEditCellPropsParams, GridColDef, isOverflown  } from '@material-ui/data-grid';
 import { makeStyles, createStyles, Theme } from '@material-ui/core/styles';
-import { Select, MenuItem, InputLabel, FormControl, Typography, Paper, Chip } from '@material-ui/core';
+import { Select, MenuItem, InputLabel, FormControl, Typography, Paper, Chip, Popper, IconButton } from '@material-ui/core';
 
-interface BookType {
+interface GridCellExpandProps {
+  value: string;
+  width: number;
+}
+
+const useStylesCell = makeStyles(() =>
+  createStyles({
+    root: {
+      alignItems: 'center',
+      lineHeight: '24px',
+      width: '100%',
+      height: '100%',
+      position: 'relative',
+      display: 'flex',
+      '& .cellValue': {
+        whiteSpace: 'nowrap',
+        overflow: 'hidden',
+        textOverflow: 'ellipsis',
+      },
+    },
+  }),
+);
+
+const GridCellExpand = React.memo(function GridCellExpand(
+  props: GridCellExpandProps,
+) {
+  const { width, value } = props;
+  const wrapper = React.useRef<HTMLDivElement | null>(null);
+  const cellDiv = React.useRef(null);
+  const cellValue = React.useRef(null);
+  const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
+  const classes = useStylesCell();
+  const [showFullCell, setShowFullCell] = React.useState(false);
+  const [showPopper, setShowPopper] = React.useState(false);
+
+  const handleMouseEnter = () => {
+    const isCurrentlyOverflown = isOverflown(cellValue.current!);
+    setShowPopper(isCurrentlyOverflown);
+    setAnchorEl(cellDiv.current);
+    setShowFullCell(true);
+  };
+
+  const handleMouseLeave = () => {
+    setShowFullCell(false);
+  };
+
+  React.useEffect(() => {
+    if (!showFullCell) {
+      return undefined;
+    }
+
+    function handleKeyDown(nativeEvent: KeyboardEvent) {
+      // IE11, Edge (prior to using Bink?) use 'Esc'
+      if (nativeEvent.key === 'Escape' || nativeEvent.key === 'Esc') {
+        setShowFullCell(false);
+      }
+    }
+
+    document.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [setShowFullCell, showFullCell]);
+
+  return (
+    <div
+      className={classes.root}
+      ref={wrapper}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+    >
+      <div
+        ref={cellDiv}
+        style={{
+          height: 1,
+          width,
+          display: 'block',
+          position: 'absolute',
+          top: 0,
+        }}
+      />
+      <div ref={cellValue} className="cellValue">
+        {value}
+      </div>
+      {showPopper && (
+        <Popper
+          open={showFullCell && anchorEl !== null}
+          anchorEl={anchorEl}
+          style={{ width, marginLeft: -17 }}
+        >
+          <Paper
+            elevation={1}
+            style={{ minHeight: wrapper.current!.offsetHeight - 3 }}
+          >
+            <Typography variant="body2" style={{ padding: 8 }}>
+              {value}
+            </Typography>
+          </Paper>
+        </Popper>
+      )}
+    </div>
+  );
+});
+
+function renderCellExpand(params: GridCellParams) {
+  return (
+    <GridCellExpand
+      value={params.value ? params.value.toString() : ''}
+      width={params.colDef.width}
+    />
+  );
+}
+
+
+export interface BookType {
     code: string,
     title: string,
     type: string
 }
 
-interface SelectedBookQuantityType {
+export interface SelectedBookQuantityType {
     book: BookType,
-    quantity: number
+    quantity: number,
+    issued: number | null,
+    sold: number | null
 }
 
 const useStyles = makeStyles( (theme: Theme) => createStyles(
@@ -49,51 +168,76 @@ export function BookDropdownAndSelectedBooks(props: BookDropdownProps) {
      
     let setBooks =  props.setBooks;
     let books = props.books;
-    let onDeleteBook = useCallback((book: SelectedBookQuantityType) => {
-        setBooks(books.filter((item: any) => item.book.code !== book.book.code))
+    let onDeleteBook = useCallback((code: string) => {
+        setBooks(books.filter((item: any) => item.book.code !== code))
     },[books, setBooks]);
+
+    let onUpdateBookQuantity = useCallback((code: string, quantity: number) => {
+        let book = books.find( (it) => it.book.code == code);
+        if (book !== undefined) {
+            book.quantity = quantity;
+            let filteredBooks = books.filter((bq) => bq.book.code !== code);
+            setBooks([...filteredBooks, book ])
+        }
+    }, [books, setBooks])
 
     return (
         <>
             <BookDropdown {...props}/>
-            <SelectedBooks books={props.books} onDeleteBook={onDeleteBook}/>
+            <SelectedBooks books={props.books} onDeleteBook={onDeleteBook} onUpdated={onUpdateBookQuantity}/>
         </>
     )
 }
 interface SelectedBooksProps {
     books: SelectedBookQuantityType[],
-    onDeleteBook(book: SelectedBookQuantityType): void
+    onDeleteBook: (code: string) =>  void,
+    onUpdated:  (code: string, quantity: number) => void
 }
 
 function SelectedBooks(props: SelectedBooksProps) {
     let classes = useStyles();
-    let books: SelectedBookQuantityType[]  = props.books;
+    let booksAndQuantites: SelectedBookQuantityType[]  = props.books;
     let onDeleteBook = props.onDeleteBook;
+    let onUpdateBookQuantity = props.onUpdated;
+    let renderRemovableCell = (params: GridCellParams) => {
 
-    return (
+        return (
+            <IconButton>
+                 <HighlightOffIcon color="secondary"/>
+            </IconButton>
+            
+        )
+    }
 
-        <Grid item xs={12} md={12}>
-            {books.length > 0 && 
-                    <Paper variant="outlined" className={classes.bookList}>
-                        {books.map((data: SelectedBookQuantityType) => {
-                            return(
-                                <li key={data.book.code}>
-                                    <Chip
-                                        label={`${data.book.title} - ${data.quantity}`}
-                                        onDelete={ (event: any) => {
-                                                onDeleteBook(data)
-                                            } 
-                                        }
-                                        className={classes.padding}
-                                    ></Chip>
-                                </li>
-                            )
-                        })}
-                    </Paper>
+    let columns = [ {field: "id", type: 'string'}, {field: "Title", flex: 1, type: 'string', renderCell: renderCellExpand}, {field: "Quantity", flex: 0.5, editable: true, type: 'number'}, {field: "Remove", flex: 0.5, renderCell: renderRemovableCell}]
+    let rows = booksAndQuantites.map( (bq) => {
+        return {
+            id: bq.book.code,
+            Title: bq.book.title,
+            Quantity: bq.quantity,
+            Remove: bq.book.code
+        }
+    })
+    let handleCellChange = (params: GridEditCellPropsParams, event?: any) => {
+        let bookId = params.id;
+        if (params.field === "Quantity") {
+            let value = params.props.value
+            if (value) {
+                onUpdateBookQuantity(bookId as string, parseInt(value as string))
             }
-        </Grid>
-
-    )    
+           
+        }
+    }
+    
+    return (
+            <div style={{ height: 250, width: '100%' }}>
+                <DataGrid 
+                    columns={columns}
+                    rows={rows}
+                    onEditCellChangeCommitted={handleCellChange}
+                />
+            </div>
+    )
 }
 
 interface BookError {
@@ -166,10 +310,9 @@ export function BookDropdown(props: BookDropdownProps) {
 
 
     let onAddBook = useCallback(() => {
-        // errorDispatch({type: 'books'})
         let itemToupdate = books.find( (items) => items.book.code === book?.code)
         if (book !== null && itemToupdate === undefined) {
-            onBooksChange([...books, {book, quantity}])
+            onBooksChange([...books, {book, quantity, issued: null, sold: null}])
         } else if (itemToupdate) {
             itemToupdate.quantity += quantity
             onBooksChange([...books])
