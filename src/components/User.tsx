@@ -4,21 +4,47 @@ import * as Yup from 'yup';
 import TextField from '@material-ui/core/TextField';
 import Button from '@material-ui/core/Button';
 import Grid from '@material-ui/core/Grid'
-import { UserContext } from '../providers/UserProvider';
+import { AuthenticatedUser, UserContext } from '../providers/UserProvider';
 import { CircularProgress, SnackbarCloseReason } from '@material-ui/core';
 import SuccesOrFailureAlert from './SuccesOrFailureAlert';
 
-export default function UserForm() {
+export default function UserForm(props: UserFormProps) {
 
   return(
     <UserContext.Consumer>
-      {(userState) => <User userState={userState}/>}
+      {(userState) => <User user={props.user} userState={userState}/>}
     </UserContext.Consumer>
   )
 
 }
 
-function User(props: any) {
+export interface Address {
+  line: string,
+  line2: string | undefined,
+  postalCode: string,
+  city: string,
+  country: string | undefined,
+}
+
+export interface UserValue {
+  id: string | undefined,
+  firstName: string,
+  lastName: string,
+  address: Address,
+  email: string,
+  cellPhone: string,
+  homePhone: string
+}
+
+interface UserFormProps {
+  user: UserValue | undefined
+}
+
+interface UserProps extends UserFormProps {
+  userState: AuthenticatedUser
+}
+
+function User(props: UserProps) {
 
   let [submitting, setSubmitting] = useState(false);
   let [submitMessage, setSubmitMessage] = useState("");
@@ -26,7 +52,8 @@ function User(props: any) {
   let [success, setSuccess] = useState(false);
 
   let url = process.env.REACT_APP_API_URL ||  "http://localhost:8080";
-    let intialValues = {
+    let intialValues = props.user || {
+        id: undefined,
         firstName: '',
         lastName: '',
         address: {

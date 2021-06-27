@@ -30,11 +30,11 @@ function LoginButton({user}: LoginProps) {
     GoogleSignIn();
   } 
 
-  useEffect(() => {
-      if (user !== null) {
-        history.replace("/order");
-      }
-  }, [user, history])
+  // useEffect(() => {
+  //     if (user !== null) {
+  //       history.replace("/order");
+  //     }
+  // }, [user, history])
 
 
   return (

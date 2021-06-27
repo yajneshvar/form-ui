@@ -7,6 +7,8 @@ import { LoginPage } from './components/Login';
 import UserProvider, { PrivateRoute } from './providers/UserProvider';
 import { Grid } from '@material-ui/core';
 import {BrowserRouter as Router , NavLink, Route, Switch} from "react-router-dom";
+import { UpdateUser, UserList } from './components/UserList';
+import { LocationProvider } from '@reach/router';
 
 
 
@@ -24,9 +26,16 @@ function App() {
               <PrivateRoute exact path="/order">
                 <Order/>
               </PrivateRoute>
-              <PrivateRoute exact path="/user">
-                <User/>  
+              <PrivateRoute exact path="/users">
+                <UserList/>
               </PrivateRoute>
+              <PrivateRoute exact path="/user">
+                <User user={undefined}/>  
+              </PrivateRoute>
+              {/* <PrivateRoute path="/user/:id"> 
+              <User user={undefined}/> 
+              </PrivateRoute> */}
+              <PrivateRoute path="/user/:id" children={({ match }) => (<UpdateUser params={match?.params}></UpdateUser>)}/>
               <Route exact path="/login">
                 <LoginPage/>
               </Route>

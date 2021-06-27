@@ -5,6 +5,7 @@ import {
     Route,
     Redirect,
     RouteProps,
+    RouteComponentProps,
   } from "react-router-dom";
 
 
@@ -30,19 +31,33 @@ export default function UserProvider(props :any) {
 }
 
 
-export function PrivateRoute({ children, ...rest } : RouteProps) {
+export function PrivateRoute(props : RouteProps) {
+    let { children, ...rest } = props;
     return (
         <UserContext.Consumer>
-            {(user) => 
-                <Route
-                    {...rest}
-                    render={({location} : {location:any}) => user ? children : (<Redirect
-                        to={{
-                            pathname: "/login",
-                            state: {from: location}
-                        }}
-                    />) }
-                />
+            {(user) => {
+                if (!user) {
+                    return (
+                        <Route
+                        {...rest}
+                        render={({location}) => {
+                                return (<Redirect
+                                    to={{
+                                        pathname: "/login",
+                                        state: {from: location}
+                                    }}
+                                />)
+                        } }
+                    />
+                    )
+                } else {
+                    return (
+                        <Route
+                        {...props}
+                        />
+                    )
+                }
+            }
             }
         </UserContext.Consumer>
     )

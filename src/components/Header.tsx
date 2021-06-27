@@ -55,6 +55,7 @@ export default function Header() {
             >
                 <MenuItem onClick={handleClose}><NavLink to="/order">Order</NavLink></MenuItem>
                 <MenuItem onClick={handleClose}><NavLink to="/user">Customer</NavLink></MenuItem>
+                <MenuItem onClick={handleClose}><NavLink to="/users">Customers</NavLink></MenuItem>
             </Drawer>
           <Typography variant="h6" className={classes.title}>
             Forms
