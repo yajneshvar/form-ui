@@ -1,4 +1,4 @@
-import React, { Reducer, useCallback, useEffect, useReducer, useState } from 'react';
+import React, { Dispatch, SetStateAction, useCallback, useEffect, useState } from 'react';
 import TextField from '@material-ui/core/TextField';
 import Button from '@material-ui/core/Button';
 import Grid from '@material-ui/core/Grid';
@@ -6,9 +6,11 @@ import Autocomplete from '@material-ui/lab/Autocomplete'
 import { makeStyles, createStyles, Theme } from '@material-ui/core/styles';
 import {  Select, MenuItem, InputLabel, FormControl, FormControlLabel, Checkbox, Typography, CircularProgress, TextareaAutosize, SnackbarCloseReason } from '@material-ui/core';
 import { UserContext, AuthenticatedUser } from '../providers/UserProvider';
-import { DispatchAction } from './models';
-import { BookDropdownAndSelectedBooks, SelectedBookQuantityType } from './BookDropdown';
+import { Customer, Order, SelectedBookQuantity } from './models';
+import { BookDropdownAndSelectedBooks } from './BookDropdown';
 import SuccessOrFailureAlert from './SuccesOrFailureAlert';
+import { FormikProps, withFormik } from 'formik';
+import { string, object, number, array, boolean } from 'yup';
 
 
 const useStyles = makeStyles( (theme: Theme) => createStyles(
@@ -54,74 +56,125 @@ export default function OrderForm() {
 
     return (
         <UserContext.Consumer>
-            {(userState) => <Order userState={userState}></Order>}
+            {(userState) => <EnchancedOrder userState={userState} order={null}></EnchancedOrder>}
         </UserContext.Consumer>
     )
 }
 
-export function Order(props: any) {
+const url = process.env.REACT_APP_API_URL ||  "http://localhost:8080";
 
-    let userState: AuthenticatedUser = props.userState
+interface EnhancedOrderProps {
+    order: Order | null,
+    userState: AuthenticatedUser
+}
+interface OrderProps {
+    order: Order | null,
+    open: boolean,
+    setOpen: Dispatch<SetStateAction<boolean>>,
+    success: boolean,
+    message: string,
+    userState: AuthenticatedUser
+}
 
-    let url = process.env.REACT_APP_API_URL ||  "http://localhost:8080";
-
-    interface CustomerType {
-        id: String,
-        firstName: string,
-        lastName: string,
-        postalCode: string,
-        email: string
-      }
-
-    let errorInitialState = {
-        customer: null,
-        books: null,
-        channel: null
-    }
-
-    interface ErrorMessage {
-        customer: string | null,
-        books: string | null,
-        channel: string | null
-    }
-
-    let errorReducer = (state: ErrorMessage, action: DispatchAction) => {
-        switch(action.type) {
-            case 'customerError':
-                return {...state, customer: "Please select a customer"};
-            case 'booksError':
-                return {...state, books: "Please add a book"};
-            case 'channelError': 
-                return {...state, channel: "Please select a channel"};
-            case 'customer':
-                return {...state, customer: null};
-            case 'books':
-                return {...state, books: null};
-            case 'channel': 
-                return {...state, channel: null};
-            default:
-                throw new Error();
-        }
-    }
-
-    let [books, setBooks] = useState<SelectedBookQuantityType[]>([]);
-    let [customer, setCustomer] = useState<CustomerType | null>( null);
-    let [customers, setCustomers] = useState<CustomerType[]>([]);
-    let [delivery, setDelivery] = useState(false);
-    let [channels, setChannels] = useState<string[]>([]);
-    let [channel, setChannel] = useState("");
-    let [additionalNotes, setAdditionaltNotes] = useState("")
-    let [deliveryNotes, setDeliveryNotes] = useState("")
-    let [errors, errorDispatch] = useReducer<Reducer<ErrorMessage, DispatchAction>, ErrorMessage>(errorReducer, errorInitialState, (d) => d)
-    let [submitting, setSubmitting] = useState(false)
+function EnchancedOrder(orderProps: EnhancedOrderProps) {
     let [open, setOpen] = useState(false)
-    let [submitMessage, setSubmitMessage] = useState("")
+    let [message, setMessage] = useState("")
     let [success, setSuccess] = useState(false)
 
+
+    const bookSchema = object({
+        code: string().required(),
+        title: string().required(),
+        type: string().required(),
+    });
+
+    const EnhancedOrder = withFormik<OrderProps,Order>({
+        mapPropsToValues: (props) => {
+            const initialValues : Order = {
+                books: [],
+                customer: null,
+                delivery: false,
+                channel: "",
+                additionalNotes: "",
+                deliveryNotes: "",
+                creator: null
+            }
+            return initialValues || props.order;
+        },
+        validateOnChange: false,
+        validationSchema: object({
+            books: array().of(object({
+                book: bookSchema,
+                startCount: number().required(),
+                endCount: number().nullable(),
+                netCount: number().nullable(),
+            })).min(1).max(25).required(),
+            customer: object({
+                id: string().required(),
+                firstName: string().required(),
+                lastName: string().required(),
+                postalCode: string().required(),
+                email: string().required(),
+            }),
+            delivery: boolean().required(),
+            channel: string().required(),
+            additionalNotes: string().default(""),
+            deliveryNotes: string().default(""),
+        }),
+        handleSubmit: (values) => {
+            const books = values.books.map((bookQuantity) => { return {...bookQuantity.book, startCount: bookQuantity.startCount } });
+            const { customer, ...rest} = values;
+            return fetch(`${url}/order`, {
+                method: "POST",
+                mode: 'cors',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({...rest, books, customerId: values.customer?.id, creator: orderProps.userState?.email})
+            }).then( response => {
+                setOpen(true)
+                setSuccess(response.ok)
+                if (response.ok) {
+                    setMessage("Success")
+                } else {
+                    setMessage("Failed to submit order")
+                }
+            }).catch( err => {
+                setOpen(true)
+                setSuccess(false)
+                setMessage("Failed to submit order")
+            })
+        } 
+    }) (OrderComponent)
+
+    return (
+        <EnhancedOrder {...{...orderProps, success, open, setOpen, message }}></EnhancedOrder>
+    )
+}
+
+export function OrderComponent(props: OrderProps & FormikProps<Order>) {
+
+    let {
+        errors,
+        touched,
+        values,
+        setFieldValue,
+        handleSubmit,
+        isSubmitting,
+        message,
+        open,
+        setOpen,
+        success,
+    } = props
+
+    let [books, setBooks] = useState<SelectedBookQuantity[]>([]);
+    let [customers, setCustomers] = useState<Customer[]>([]);
+    let [channels, setChannels] = useState<string[]>([]);
+
     let storageEventHandler = useCallback((event: StorageEvent) => {
-        let newCustomers: CustomerType[] = []
+        let newCustomers: Customer[] = []
         if (event.key === "latestCustomer" && event.newValue !== null) {
-            newCustomers = JSON.parse(event.newValue) as CustomerType[]
+            newCustomers = JSON.parse(event.newValue) as Customer[]
         }
         setCustomers([...newCustomers, ...customers])
     },[customers])
@@ -162,96 +215,45 @@ export function Order(props: any) {
     },[url])
 
     let onChannelSelected = useCallback((event: React.ChangeEvent<{ value: unknown }>) => {
-        errorDispatch({type: 'channel'});
         let channelSelection = event.target.value as string
-        setChannel(channelSelection);
+        setFieldValue("channel", channelSelection);
       },[]);
 
 
     let onDeliverySelected = (event: React.ChangeEvent<HTMLInputElement>, checked: boolean) => {
-        setDelivery(del => !del);
+        setFieldValue("delivery", checked);
     }
 
     let onPaymentNotesChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
-        setAdditionaltNotes(event.target.value);
+        setFieldValue("additionalNotes", event.target.value);
       };
 
     let onDeliveryNotesChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
-        setDeliveryNotes(event.target.value);
+        setFieldValue("deliveryNotes", event.target.value);
       };
 
     let onCustomerChange = useCallback((event: any, newValue: any) => {
-        errorDispatch({type: 'customer'})
-        setCustomer(newValue);
+        setFieldValue("customer", newValue)
     },[])
+
+    let onBooksChange = useCallback((booksAndQuantity: SelectedBookQuantity[]) => {
+        setFieldValue("books",booksAndQuantity);
+    },[books, setBooks])
 
     const handleAlertClose = (event: any, reason: SnackbarCloseReason) => {
         if (reason === 'clickaway') {
           return;
         }
-    
+
         setOpen(false);
     };
 
     let classes = useStyles();
 
-    let onFormSubmit = useCallback((event: any) => {
+    let submit = useCallback((event: any) => {
         event.preventDefault();
-        let values = {
-            customerId: customer?.id,
-            books: books.map( b => {return {...b.book, quantity: b.quantity}}),
-            channel,
-            delivery,
-            deliveryNotes,
-            paymentNotes: additionalNotes,
-            creator: userState?.email
-        };
-        let valid = true;
-
-        if (values.customerId === undefined) {
-            errorDispatch({type: 'customerError'})
-            valid = false;
-        }
-
-        if (values.channel === undefined || values.channel === null || values.channel === "") {
-            errorDispatch({type: 'channelError'})
-            valid = false;
-        }
-
-        if (values.books.length === 0) {
-            errorDispatch({type: 'booksError'})
-            valid = false;
-        }
-
-        if (!valid) {
-            return;
-        }
-
-        setSubmitting(true)
-        
-        fetch(`${url}/order`, {
-            method: "POST",
-            mode: 'cors',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(values)
-        }).then( response => {
-            setOpen(true)
-            setSuccess(response.ok)
-            if (response.ok) {
-                setSubmitMessage("Success")
-            } else {
-                setSubmitMessage("Failed to submit order")
-            }
-            setSubmitting(false)
-        }).catch( err => {
-            setOpen(true)
-            setSuccess(false)
-            setSubmitMessage("Failed to submit order")
-            setSubmitting(false)
-        })
-    },[ errorDispatch, books, channel, customer, delivery, deliveryNotes, additionalNotes, url, userState])
+        handleSubmit()
+    }, [handleSubmit])
 
     return (  
             <Grid container xs={12} md={12} lg={12} alignItems="baseline" justify="center">
@@ -259,8 +261,8 @@ export function Order(props: any) {
                 <Grid container xs={12} md={12} lg={12} alignItems="baseline" spacing={2}>
                 <Grid item xs={12} md={12} lg={12} >
                     <Autocomplete
-                        options={customers as CustomerType[]}
-                        value={customer}
+                        options={customers as Customer[]}
+                        value={values.customer}
                         onChange={onCustomerChange}
                         renderOption={( option: any ) => (<> 
                                 <span>{`${option.firstName} - ${option.postalCode}`}</span>
@@ -278,55 +280,54 @@ export function Order(props: any) {
                             option.email === value.email
                         )}
                     />
-                    {errors.customer && (<Typography className={classes.errorMessage} variant="caption" display="block" gutterBottom>{errors.customer}</Typography>)}
+                    {errors.customer && touched.customer && (<Typography className={classes.errorMessage} variant="caption" display="block" gutterBottom>{errors.customer}</Typography>)}
                 </Grid>
                 <BookDropdownAndSelectedBooks 
-                    onChange = {() => { errorDispatch({type: 'books'}) }}
-                    books = {books}
-                    setBooks = {setBooks}
-                    errors = {{
-                        books: errors.books
-                    }}
+                    onChange = {() => {}}
+                    books = {values.books}
+                    setBooks = {onBooksChange}
+                    errors = {errors}
+                    touched = {touched.books}
                 />
                 <Grid item xs={12} md={6} className={classes.padding} >
                     <FormControl variant="outlined" className={classes.formControl}>
                         <InputLabel htmlFor="channel-select">Channel</InputLabel>
-                        <Select value={channel} onChange={onChannelSelected} id="channel-select">
+                        <Select value={values.channel} onChange={onChannelSelected} id="channel-select">
                             {channels.map( ch => (<MenuItem value={ch}>{ch}</MenuItem>))}
                         </Select>
                     </FormControl>
-                    {errors.channel && (<Typography className={classes.errorMessage} variant="caption" display="block" gutterBottom>{errors.channel}</Typography>)}
+                    {errors.channel && touched.channel && (<Typography className={classes.errorMessage} variant="caption" display="block" gutterBottom>{errors.channel}</Typography>)}
                 </Grid>
 
                 <Grid item xs={6} className={classes.padding} >
                     <FormControlLabel
-                        control={<Checkbox checked={delivery} onChange={onDeliverySelected}></Checkbox>}
+                        control={<Checkbox checked={values.delivery} onChange={onDeliverySelected}></Checkbox>}
                         label="Delivery Required"
                     ></FormControlLabel>
-                                    { delivery && 
-                        <TextareaAutosize value={deliveryNotes} onChange={onDeliveryNotesChange} id="delivery-notes" rowsMin={3} placeholder="Delivery Notes"></TextareaAutosize>
+                                    { values.delivery && 
+                        <TextareaAutosize value={values.deliveryNotes} onChange={onDeliveryNotesChange} id="delivery-notes" rowsMin={3} placeholder="Delivery Notes"></TextareaAutosize>
                     }
 
                 </Grid>
 
                 <Grid item xs={12} md={6} className={classes.padding} alignItems="flex-start">
-                    <TextareaAutosize aria-label="additonal-notes" value={additionalNotes} onChange={onPaymentNotesChange} rowsMin={3} placeholder="Additional Notes"/>       
+                    <TextareaAutosize aria-label="additonal-notes" value={values.additionalNotes} onChange={onPaymentNotesChange} rowsMin={3} placeholder="Additional Notes"/>       
                 </Grid>
 
             <Grid item xs={6} className={classes.padding}>
-                <Button variant="contained" color="primary" type="submit" onClick={onFormSubmit}>
+                <Button variant="contained" color="primary" type="submit" onClick={submit}>
                     Submit
                 </Button>
             </Grid>
             <Grid container item xs={6} md={12} justify="center" spacing={2}>
-                {submitting && (<CircularProgress></CircularProgress>)}
+                {isSubmitting && (<CircularProgress></CircularProgress>)}
             </Grid>
             <Grid item xs={12}>
                 <SuccessOrFailureAlert
                     open={open}
                     onClose={handleAlertClose}
                     success={success}
-                    message={submitMessage}
+                    message={message}
                 />
             </Grid>
             </Grid>

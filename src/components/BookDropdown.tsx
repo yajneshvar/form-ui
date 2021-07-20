@@ -7,6 +7,7 @@ import Autocomplete from '@material-ui/lab/Autocomplete'
 import { DataGrid, GridCellParams, GridEditCellPropsParams, isOverflown  } from '@material-ui/data-grid';
 import { makeStyles, createStyles, Theme } from '@material-ui/core/styles';
 import { Select, MenuItem, InputLabel, FormControl, Typography, Paper, Popper, IconButton } from '@material-ui/core';
+import { SelectedBookQuantity, Book } from './models';
 
 interface GridCellExpandProps {
   value: string;
@@ -122,20 +123,6 @@ function renderCellExpand(params: GridCellParams) {
   );
 }
 
-
-export interface BookType {
-    code: string,
-    title: string,
-    type: string
-}
-
-export interface SelectedBookQuantityType {
-    book: BookType,
-    quantity: number,
-    issued: number | null,
-    sold: number | null
-}
-
 const useStyles = makeStyles( (theme: Theme) => createStyles(
     {
         book: {
@@ -175,7 +162,7 @@ export function BookDropdownAndSelectedBooks(props: BookDropdownProps) {
     let onUpdateBookQuantity = useCallback((code: string, quantity: number) => {
         let book = books.find( (it) => it.book.code === code);
         if (book !== undefined) {
-            book.quantity = quantity;
+            book.startCount = quantity;
             let filteredBooks = books.filter((bq) => bq.book.code !== code);
             setBooks([...filteredBooks, book ])
         }
@@ -189,22 +176,20 @@ export function BookDropdownAndSelectedBooks(props: BookDropdownProps) {
     )
 }
 interface SelectedBooksProps {
-    books: SelectedBookQuantityType[],
+    books: SelectedBookQuantity[],
     onDeleteBook: (code: string) =>  void,
     onUpdated:  (code: string, quantity: number) => void
 }
 
 function SelectedBooks(props: SelectedBooksProps) {
-    let booksAndQuantites: SelectedBookQuantityType[]  = props.books;
+    let booksAndQuantites: SelectedBookQuantity[]  = props.books;
     let onDeleteBook = props.onDeleteBook;
     let onUpdateBookQuantity = props.onUpdated;
     let renderRemovableCell = (params: GridCellParams) => {
-
         return (
             <IconButton onClick={(event: any) => {onDeleteBook(params.id.toString())} }>
                  <HighlightOffIcon color="secondary"/>
             </IconButton>
-            
         )
     }
 
@@ -213,7 +198,7 @@ function SelectedBooks(props: SelectedBooksProps) {
         return {
             id: bq.book.code,
             Title: bq.book.title,
-            Quantity: bq.quantity,
+            Quantity: bq.startCount,
             Remove: bq.book.code
         }
     })
@@ -239,25 +224,22 @@ function SelectedBooks(props: SelectedBooksProps) {
     )
 }
 
-interface BookError {
-    books: string | null
-}
-
 interface BookDropdownProps {
-    books: SelectedBookQuantityType[],
-    setBooks: (value: SelectedBookQuantityType[]) => void,
+    books: SelectedBookQuantity[],
+    setBooks: (value: SelectedBookQuantity[]) => void,
     onChange: () => void,
-    errors: BookError
+    errors: any,
+    touched: any,
 }
 
 
 
 export function BookDropdown(props: BookDropdownProps) {
 
-    let books: SelectedBookQuantityType[]  = props.books;
-    let setBooks: (value: SelectedBookQuantityType[]) => void = props.setBooks;
+    let books: SelectedBookQuantity[]  = props.books;
+    let setBooks: (value: SelectedBookQuantity[]) => void = props.setBooks;
     let onChange: () => void = props.onChange
-    let onBooksChange = useCallback((books: SelectedBookQuantityType[]) => {
+    let onBooksChange = useCallback((books: SelectedBookQuantity[]) => {
         setBooks(books);
         onChange();
     },[setBooks, onChange])
@@ -268,10 +250,10 @@ export function BookDropdown(props: BookDropdownProps) {
 
     let classes = useStyles();
 
-    let [book, setBook] = useState<BookType | null>(null);
+    let [book, setBook] = useState<Book | null>(null);
     let [quantity, setQuantity] = useState(1);
-    let [filteredBookList, setFilteredBookList] = useState<BookType[]>([]);
-    let [bookList, setBooksList] = useState<BookType[]>([]);
+    let [filteredBookList, setFilteredBookList] = useState<Book[]>([]);
+    let [bookList, setBooksList] = useState<Book[]>([]);
     let [types, setTypes] = useState<string[]>([]);
     let [selectedType, setSelectedType] = useState<string>("");
 
@@ -283,7 +265,7 @@ export function BookDropdown(props: BookDropdownProps) {
                 response.json().then( listOfBooks => {
                     setBooksList(listOfBooks)
                     setFilteredBookList(listOfBooks)
-                    let retrievedBooks = listOfBooks as BookType[];
+                    let retrievedBooks = listOfBooks as Book[];
                     let uniqueTypes = new Set(retrievedBooks.map(book => book.type));
                     let uniqTypeList: string[] = []
                     uniqueTypes.forEach ( type => uniqTypeList.push(type))
@@ -311,9 +293,9 @@ export function BookDropdown(props: BookDropdownProps) {
     let onAddBook = useCallback(() => {
         let itemToupdate = books.find( (items) => items.book.code === book?.code)
         if (book !== null && itemToupdate === undefined) {
-            onBooksChange([...books, {book, quantity, issued: null, sold: null}])
+            onBooksChange([...books, {book, startCount: quantity, endCount: null, netCount: null}])
         } else if (itemToupdate) {
-            itemToupdate.quantity += quantity
+            itemToupdate.startCount += quantity
             onBooksChange([...books])
         }
     }, [books, onBooksChange, book, quantity]);
@@ -339,7 +321,7 @@ export function BookDropdown(props: BookDropdownProps) {
                         selectedType ? 
                         (<Autocomplete
                             className={classes.book}
-                            options={filteredBookList as BookType[]}
+                            options={filteredBookList as Book[]}
                             value={book}
                             onChange={(event: any, newValue: any) => {
                                 setBook(newValue);
@@ -377,7 +359,7 @@ export function BookDropdown(props: BookDropdownProps) {
                         />)
 
                     }
-                    {errors.books && (<Typography className={classes.errorMessage} variant="caption" display="block" gutterBottom>{errors.books}</Typography>)}
+                    {errors.books && props.touched && (<Typography className={classes.errorMessage} variant="caption" display="block" gutterBottom>{errors.books}</Typography>)}
                 </Grid>
                 <Grid item xs={12} md={6}>
                     <TextField
