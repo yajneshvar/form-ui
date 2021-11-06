@@ -7,6 +7,7 @@ import Grid from '@material-ui/core/Grid'
 import { AuthenticatedUser, UserContext } from '../providers/UserProvider';
 import { CircularProgress, SnackbarCloseReason } from '@material-ui/core';
 import SuccesOrFailureAlert from './SuccesOrFailureAlert';
+import { fetchWithAuth } from '../utils/auth';
 
 export default function UserForm(props: UserFormProps) {
 
@@ -80,7 +81,7 @@ function User(props: UserProps) {
     let onSubmit = (values: any) => {
       let user = {creator: props.userState?.email, ...values}
       setSubmitting(true);
-      fetch(`${url}/user`, {
+      fetchWithAuth(`${url}/users`, {
         method: "POST",
         mode: 'cors',
         headers: {

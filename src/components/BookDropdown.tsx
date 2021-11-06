@@ -8,6 +8,7 @@ import { DataGrid, GridCellParams, GridEditCellPropsParams, isOverflown  } from 
 import { makeStyles, createStyles, Theme } from '@material-ui/core/styles';
 import { Select, MenuItem, InputLabel, FormControl, Typography, Paper, Popper, IconButton } from '@material-ui/core';
 import { SelectedBookQuantity, Book } from './models';
+import { useFetchWithAuth } from '../hooks/fetchWithAuth';
 
 interface GridCellExpandProps {
   value: string;
@@ -257,23 +258,27 @@ export function BookDropdown(props: BookDropdownProps) {
     let [types, setTypes] = useState<string[]>([]);
     let [selectedType, setSelectedType] = useState<string>("");
 
+    const {response, error } = useFetchWithAuth(`${url}/books`, {
+      method: 'GET'
+    });
+
+    // if (error) {
+    //   throw error
+    // }
+
     useEffect(() => {
-        fetch(`${url}/books`, {
-            method: 'GET'
-        }).then( (response) => {
-            if (response.ok) {
-                response.json().then( listOfBooks => {
-                    setBooksList(listOfBooks)
-                    setFilteredBookList(listOfBooks)
-                    let retrievedBooks = listOfBooks as Book[];
-                    let uniqueTypes = new Set(retrievedBooks.map(book => book.type));
-                    let uniqTypeList: string[] = []
-                    uniqueTypes.forEach ( type => uniqTypeList.push(type))
-                    setTypes(uniqTypeList);
-                })
-            }
+      if (response?.ok) {
+        response.json().then( listOfBooks => {
+            setBooksList(listOfBooks)
+            setFilteredBookList(listOfBooks)
+            let retrievedBooks = listOfBooks as Book[];
+            let uniqueTypes = new Set(retrievedBooks.map(book => book.type));
+            let uniqTypeList: string[] = []
+            uniqueTypes.forEach ( type => uniqTypeList.push(type))
+            setTypes(uniqTypeList);
         })
-    }, [url])
+      }
+    }, [response])
 
     let onTypeSelected =  (event: React.ChangeEvent<{ value: unknown }>) => {
         let newType = event.target.value as string

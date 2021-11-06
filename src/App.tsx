@@ -4,7 +4,7 @@ import Order from './components/Order';
 import Header from './components/Header';
 import './App.css';
 import { LoginPage } from './components/Login';
-import UserProvider, { PrivateRoute } from './providers/UserProvider';
+import UserProvider from './providers/UserProvider';
 import { Grid } from '@material-ui/core';
 import {BrowserRouter as Router , NavLink, Route, Switch} from "react-router-dom";
 import { UpdateUser, UserList } from './components/UserList';
@@ -23,19 +23,19 @@ function App() {
               <Route exact path="/">
                 <HomePage></HomePage>
               </Route>
-              <PrivateRoute exact path="/order">
+              <Route exact path="/order">
                 <Order/>
-              </PrivateRoute>
-              <PrivateRoute exact path="/users">
+              </Route>
+              <Route exact path="/users">
                 <UserList/>
-              </PrivateRoute>
-              <PrivateRoute exact path="/user">
+              </Route>
+              <Route exact path="/user">
                 <User user={undefined}/>  
-              </PrivateRoute>
-              {/* <PrivateRoute path="/user/:id"> 
+              </Route>
+              {/* <Route path="/user/:id"> 
               <User user={undefined}/> 
-              </PrivateRoute> */}
-              <PrivateRoute path="/user/:id" children={({ match }) => (<UpdateUser params={match?.params}></UpdateUser>)}/>
+              </Route> */}
+              <Route path="/user/:id" children={({ match }) => (<UpdateUser params={match?.params}></UpdateUser>)}/>
               <Route exact path="/login">
                 <LoginPage/>
               </Route>

@@ -1,9 +1,7 @@
 import { Grid } from '@material-ui/core';
-import { useParams } from '@reach/router';
-import { AnyRecord } from 'node:dns';
 import React, { useEffect, useState } from 'react';
 import { NavLink } from 'react-router-dom';
-import { UserContext } from '../providers/UserProvider';
+import { useFetchWithAuth } from '../hooks/fetchWithAuth';
 import User, { UserValue } from './User';
 
 export function UserList() {
@@ -44,18 +42,19 @@ export function UpdateUser(props: any) {
     let { id } = props.params;
     let url = process.env.REACT_APP_API_URL ||  "http://localhost:8080";
     const [user, setUser] = useState<UserValue|null>(null);
+    const {response, error} = useFetchWithAuth(`${url}/user/${id}`, {
+        method: 'GET'
+    })
 
+    if (error) {
+        alert("Failed to fetch customers")
+    }
+    
     useEffect(() => {
-        fetch(`${url}/user/${id}`, {
-            method: 'GET'
-        }).then( (response) => {
-            if (response.ok) {
-                response.json().then( user => setUser(user))
-            }
-        }).catch(err => {
-            alert("Failed to fetch customers")
-        })
-    }, [url, id])
+        if (response?.ok) {
+            response.json().then( user => setUser(user))
+        }
+    }, [response])
 
     return (
             user && <User user={user}/>

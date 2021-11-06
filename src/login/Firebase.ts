@@ -27,6 +27,15 @@ export function GetCredentials() {
     .getRedirectResult();
 }
 
+export function getCurrentUser() {
+    return firebase.auth().currentUser;
+}
+
+export async function getIdToken() {
+    const idToken = await firebase.auth().currentUser?.getIdToken();
+    return idToken;
+}
+
 export function GoogleLogout() {
     return firebase.auth().signOut()
 }

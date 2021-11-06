@@ -11,6 +11,8 @@ import { BookDropdownAndSelectedBooks } from './BookDropdown';
 import SuccessOrFailureAlert from './SuccesOrFailureAlert';
 import { FormikProps, withFormik } from 'formik';
 import { string, object, number, array, boolean } from 'yup';
+import { fetchWithAuth } from '../utils/auth';
+import { useFetchWithAuth } from '../hooks/fetchWithAuth';
 
 
 const useStyles = makeStyles( (theme: Theme) => createStyles(
@@ -81,7 +83,6 @@ function EnchancedOrder(orderProps: EnhancedOrderProps) {
     let [message, setMessage] = useState("")
     let [success, setSuccess] = useState(false)
 
-
     const bookSchema = object({
         code: string().required(),
         title: string().required(),
@@ -124,7 +125,7 @@ function EnchancedOrder(orderProps: EnhancedOrderProps) {
         handleSubmit: (values) => {
             const books = values.books.map((bookQuantity) => { return {...bookQuantity.book, startCount: bookQuantity.startCount } });
             const { customer, ...rest} = values;
-            return fetch(`${url}/order`, {
+            fetchWithAuth(`${url}/orders`,{
                 method: "POST",
                 mode: 'cors',
                 headers: {
@@ -167,7 +168,6 @@ export function OrderComponent(props: OrderProps & FormikProps<Order>) {
         success,
     } = props
 
-    let [books, setBooks] = useState<SelectedBookQuantity[]>([]);
     let [customers, setCustomers] = useState<Customer[]>([]);
     let [channels, setChannels] = useState<string[]>([]);
 
@@ -190,34 +190,38 @@ export function OrderComponent(props: OrderProps & FormikProps<Order>) {
         localStorage.removeItem("latestCustomer")
     }, []);
 
-    useEffect(() => {
-        fetch(`${url}/users`, {
-            method: 'GET'
-        }).then( (response) => {
-            if (response.ok) {
-                response.json().then( users => setCustomers(users))
-            }
-        }).catch(err => {
-            alert("Failed to fetch customers")
-        })
-    }, [url])
+    const {response: userPayload, error: userError} = useFetchWithAuth(`${url}/users`, {
+        method: 'GET'
+    })
 
     useEffect(() => {
-        fetch(`${url}/channels`, {
-            method: "GET"
-        }).then( (response) => {
-            if (response.ok) {
-                response.json().then( channelList => setChannels(channelList))
-            }
-        }).catch( err => {
+        if (userError) {
+            alert("Failed to fetch customers")
+        }
+
+        if (userPayload?.ok) {
+            userPayload.json().then( users => setCustomers(users))
+        }
+    }, [userPayload, userError])
+
+    const {response: channelPayload, error: channelError} = useFetchWithAuth(`${url}/channels`, {
+        method: "GET"
+    })
+
+    useEffect(() => {
+        if (channelError) {
             alert("Failed to fetch channels")
-        })
-    },[url])
+        }
+
+        if (channelPayload?.ok) {
+            channelPayload.json().then( channelList => setChannels(channelList))
+        }
+    },[channelPayload, channelError])
 
     let onChannelSelected = useCallback((event: React.ChangeEvent<{ value: unknown }>) => {
         let channelSelection = event.target.value as string
         setFieldValue("channel", channelSelection);
-      },[]);
+      },[setFieldValue]);
 
 
     let onDeliverySelected = (event: React.ChangeEvent<HTMLInputElement>, checked: boolean) => {
@@ -234,11 +238,11 @@ export function OrderComponent(props: OrderProps & FormikProps<Order>) {
 
     let onCustomerChange = useCallback((event: any, newValue: any) => {
         setFieldValue("customer", newValue)
-    },[])
+    },[setFieldValue])
 
     let onBooksChange = useCallback((booksAndQuantity: SelectedBookQuantity[]) => {
         setFieldValue("books",booksAndQuantity);
-    },[books, setBooks])
+    },[setFieldValue])
 
     const handleAlertClose = (event: any, reason: SnackbarCloseReason) => {
         if (reason === 'clickaway') {
