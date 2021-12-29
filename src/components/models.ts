@@ -26,6 +26,24 @@ export type Book = Static<typeof Book>;
 
 export type SelectedBookQuantity = Static<typeof SelectedBookQuantity>;
 
+export const Product = Record({
+  id: String,
+  title: String,
+  type: String,
+  code: String
+});
+
+export const SelectedProductQuantity = Record({
+  product: Product,
+  startCount: Number,
+  endCount: Number.Or(Null),
+  netCount: Number.Or(Null)
+})
+
+export type Product = Static<typeof Product>;
+
+export type SelectedProductQuantity = Static<typeof SelectedProductQuantity>;
+
 const Customer = Record({
   id: String,
   firstName: String, 
@@ -37,7 +55,7 @@ const Customer = Record({
 export type Customer = Static<typeof Customer>;
 
 export const Order = Record({
-  books: Array(SelectedBookQuantity),
+  products: Array(SelectedProductQuantity),
   customer: Customer.Or(Null),
   delivery: Boolean,
   channel: String,

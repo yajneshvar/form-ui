@@ -1,12 +1,12 @@
 import { useCallback, useContext, useMemo } from "react";
 import { UserContext } from "../providers/UserProvider";
 import { useAsync } from "./useAsyncHook";
+import { getIdToken } from "../login/Firebase";
 
 
 export function useFetchCallbackWithAuth(url: string) {
-    const auth = useContext(UserContext);
     const enrichedFetch = useCallback(async () => {
-        const token = await auth?.getIdToken();
+        const token = await getIdToken();
          return (request: RequestInit) => {
             return fetch(url, {
                 ...request,
@@ -16,7 +16,7 @@ export function useFetchCallbackWithAuth(url: string) {
                 }
             });
         }
-    }, [auth, url])
+    }, [url])
     const { result: fetchWithAuth, error } = useAsync(enrichedFetch)
 
     return useCallback((request: RequestInit) => {
@@ -29,9 +29,8 @@ export function useFetchCallbackWithAuth(url: string) {
     }, [fetchWithAuth, error]);
 }
 export function useFetchWithAuth(url: string, request: RequestInit) {
-    const auth = useContext(UserContext);
     const enrichedFetch = useCallback(async () => {
-        const token = await auth?.getIdToken();
+        const token = await getIdToken();
         if (token) {
             return await fetch(url, {
                 ...request,
@@ -40,10 +39,11 @@ export function useFetchWithAuth(url: string, request: RequestInit) {
                     'Authorization': `Bearer ${token}`
                 }
             });
-        } else {
-            throw Error("No valid id token");
-        }
-    }, [auth, url, request])
+        } 
+        // else {
+        //     throw Error("No valid id token");
+        // }
+    }, [url, request])
     const result = useAsync(enrichedFetch)
 
     return {

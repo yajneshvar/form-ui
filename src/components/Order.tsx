@@ -6,8 +6,8 @@ import Autocomplete from '@material-ui/lab/Autocomplete'
 import { makeStyles, createStyles, Theme } from '@material-ui/core/styles';
 import {  Select, MenuItem, InputLabel, FormControl, FormControlLabel, Checkbox, Typography, CircularProgress, TextareaAutosize, SnackbarCloseReason } from '@material-ui/core';
 import { UserContext, AuthenticatedUser } from '../providers/UserProvider';
-import { Customer, Order, SelectedBookQuantity } from './models';
-import { BookDropdownAndSelectedBooks } from './BookDropdown';
+import { Customer, Order, SelectedBookQuantity, SelectedProductQuantity } from './models';
+import { ProductDropdownAndSelectedProducts } from './ProductDropdown';
 import SuccessOrFailureAlert from './SuccesOrFailureAlert';
 import { FormikProps, withFormik } from 'formik';
 import { string, object, number, array, boolean } from 'yup';
@@ -83,8 +83,8 @@ function EnchancedOrder(orderProps: EnhancedOrderProps) {
     let [message, setMessage] = useState("")
     let [success, setSuccess] = useState(false)
 
-    const bookSchema = object({
-        code: string().required(),
+    const productSchema = object({
+        id: string().required(),
         title: string().required(),
         type: string().required(),
     });
@@ -92,7 +92,7 @@ function EnchancedOrder(orderProps: EnhancedOrderProps) {
     const EnhancedOrder = withFormik<OrderProps,Order>({
         mapPropsToValues: (props) => {
             const initialValues : Order = {
-                books: [],
+                products: [],
                 customer: null,
                 delivery: false,
                 channel: "",
@@ -104,8 +104,8 @@ function EnchancedOrder(orderProps: EnhancedOrderProps) {
         },
         validateOnChange: false,
         validationSchema: object({
-            books: array().of(object({
-                book: bookSchema,
+            products: array().of(object({
+                product: productSchema,
                 startCount: number().required(),
                 endCount: number().nullable(),
                 netCount: number().nullable(),
@@ -123,7 +123,7 @@ function EnchancedOrder(orderProps: EnhancedOrderProps) {
             deliveryNotes: string().default(""),
         }),
         handleSubmit: (values) => {
-            const books = values.books.map((bookQuantity) => { return {...bookQuantity.book, startCount: bookQuantity.startCount } });
+            const products = values.products.map((productQuantity) => { return {...productQuantity.product, startCount: productQuantity.startCount } });
             const { customer, ...rest} = values;
             fetchWithAuth(`${url}/orders`,{
                 method: "POST",
@@ -131,7 +131,7 @@ function EnchancedOrder(orderProps: EnhancedOrderProps) {
                 headers: {
                   'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({...rest, books, customerId: values.customer?.id, creator: orderProps.userState?.email})
+                body: JSON.stringify({...rest, products, recepient: {customerId: values.customer?.id}, creator: orderProps.userState?.email})
             }).then( response => {
                 setOpen(true)
                 setSuccess(response.ok)
@@ -240,8 +240,8 @@ export function OrderComponent(props: OrderProps & FormikProps<Order>) {
         setFieldValue("customer", newValue)
     },[setFieldValue])
 
-    let onBooksChange = useCallback((booksAndQuantity: SelectedBookQuantity[]) => {
-        setFieldValue("books",booksAndQuantity);
+    let onProductsChange = useCallback((productsAndQuantity: SelectedProductQuantity[]) => {
+        setFieldValue("products",productsAndQuantity);
     },[setFieldValue])
 
     const handleAlertClose = (event: any, reason: SnackbarCloseReason) => {
@@ -286,12 +286,12 @@ export function OrderComponent(props: OrderProps & FormikProps<Order>) {
                     />
                     {errors.customer && touched.customer && (<Typography className={classes.errorMessage} variant="caption" display="block" gutterBottom>{errors.customer}</Typography>)}
                 </Grid>
-                <BookDropdownAndSelectedBooks 
+                <ProductDropdownAndSelectedProducts 
                     onChange = {() => {}}
-                    books = {values.books}
-                    setBooks = {onBooksChange}
+                    products = {values.products}
+                    setProducts = {onProductsChange}
                     errors = {errors}
-                    touched = {touched.books}
+                    touched = {touched.products}
                 />
                 <Grid item xs={12} md={6} className={classes.padding} >
                     <FormControl variant="outlined" className={classes.formControl}>
