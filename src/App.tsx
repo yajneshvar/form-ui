@@ -1,6 +1,6 @@
 import React from 'react';
 import User from './components/User';
-import Order from './components/Order';
+import { default as OrderForm, OtherForm } from './components/Order';
 import Header from './components/Header';
 import './App.css';
 import { LoginPage } from './components/Login';
@@ -24,7 +24,10 @@ function App() {
                 <HomePage></HomePage>
               </Route>
               <Route exact path="/order">
-                <Order/>
+                <OrderForm/>
+              </Route>
+              <Route exact path="/other">
+                <OtherForm/>
               </Route>
               <Route exact path="/users">
                 <UserList/>

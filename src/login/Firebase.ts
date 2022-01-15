@@ -1,5 +1,6 @@
 import firebase from 'firebase/app';
 import "firebase/auth"
+import { clearCachedCredential } from '../providers/UserProvider';
 
 
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
@@ -15,14 +16,15 @@ const firebaseConfig = {
 
 
 firebase.initializeApp(firebaseConfig)
-export const auth = firebase.auth();
+export const auth = firebase.auth()
+auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
 const provider = new firebase.auth.GoogleAuthProvider();
 
-export function GoogleSignIn() {
+export function googleSignIn() {
     return auth.signInWithRedirect(provider)
 }
 
-export function GetCredentials() {
+export function getCredentials() {
     return firebase.auth()
     .getRedirectResult();
 }
@@ -36,7 +38,8 @@ export async function getIdToken() {
     return idToken;
 }
 
-export function GoogleLogout() {
-    return firebase.auth().signOut()
+export function googleLogout() {
+    clearCachedCredential();
+    return firebase.auth().signOut();
 }
 

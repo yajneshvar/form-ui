@@ -157,7 +157,7 @@ export function ProductDropdownAndSelectedProducts(props: ProductDropdownProps) 
     let setProducts =  props.setProducts;
     let products = props.products;
     let onDeleteProduct = useCallback((id: string) => {
-        setProducts(products.filter((item: any) => item.product.id !== id))
+        setProducts(products.filter((item: any) => item.product.code !== id))
     },[products, setProducts]);
 
     let onUpdateProductQuantity = useCallback((id: string, quantity: number) => {

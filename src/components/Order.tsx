@@ -6,7 +6,7 @@ import Autocomplete from '@material-ui/lab/Autocomplete'
 import { makeStyles, createStyles, Theme } from '@material-ui/core/styles';
 import {  Select, MenuItem, InputLabel, FormControl, FormControlLabel, Checkbox, Typography, CircularProgress, TextareaAutosize, SnackbarCloseReason } from '@material-ui/core';
 import { UserContext, AuthenticatedUser } from '../providers/UserProvider';
-import { Customer, Order, SelectedBookQuantity, SelectedProductQuantity } from './models';
+import { Customer, Order, SelectedProductQuantity } from './models';
 import { ProductDropdownAndSelectedProducts } from './ProductDropdown';
 import SuccessOrFailureAlert from './SuccesOrFailureAlert';
 import { FormikProps, withFormik } from 'formik';
@@ -58,7 +58,15 @@ export default function OrderForm() {
 
     return (
         <UserContext.Consumer>
-            {(userState) => <EnchancedOrder userState={userState} order={null}></EnchancedOrder>}
+            {(userState) => <EnchancedOrder userState={userState} order={null} useAnonymousCustomer={false}></EnchancedOrder>}
+        </UserContext.Consumer>
+    )
+}
+
+export function OtherForm() {
+    return (
+        <UserContext.Consumer>
+            {(userState) => <EnchancedOrder userState={userState} order={null} useAnonymousCustomer={true}></EnchancedOrder>}
         </UserContext.Consumer>
     )
 }
@@ -67,7 +75,8 @@ const url = process.env.REACT_APP_API_URL ||  "http://localhost:8080";
 
 interface EnhancedOrderProps {
     order: Order | null,
-    userState: AuthenticatedUser
+    userState: AuthenticatedUser,
+    useAnonymousCustomer: boolean,
 }
 interface OrderProps {
     order: Order | null,
@@ -75,7 +84,8 @@ interface OrderProps {
     setOpen: Dispatch<SetStateAction<boolean>>,
     success: boolean,
     message: string,
-    userState: AuthenticatedUser
+    userState: AuthenticatedUser,
+    useAnonymousCustomer: boolean,
 }
 
 function EnchancedOrder(orderProps: EnhancedOrderProps) {
@@ -94,6 +104,7 @@ function EnchancedOrder(orderProps: EnhancedOrderProps) {
             const initialValues : Order = {
                 products: [],
                 customer: null,
+                anonymousCustomer: null,
                 delivery: false,
                 channel: "",
                 additionalNotes: "",
@@ -116,7 +127,16 @@ function EnchancedOrder(orderProps: EnhancedOrderProps) {
                 lastName: string().required(),
                 postalCode: string().required(),
                 email: string().required(),
-            }),
+            }).test(function (customer) {
+                const {anonymousCustomer} = this.parent;
+                if (!anonymousCustomer) return customer != null;
+                return true;
+            }).nullable(),
+            anonymousCustomer: string().test(function(anonymousCustomer) {
+                const {customer} = this.parent;
+                if (!customer) return anonymousCustomer != null;
+                return true;
+            }).nullable(),
             delivery: boolean().required(),
             channel: string().required(),
             additionalNotes: string().default(""),
@@ -131,7 +151,7 @@ function EnchancedOrder(orderProps: EnhancedOrderProps) {
                 headers: {
                   'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({...rest, products, recepient: {customerId: values.customer?.id}, creator: orderProps.userState?.email})
+                body: JSON.stringify({...rest, products, recepient: {customerId: values.customer?.id, anonymousUser: values.anonymousCustomer}, creator: orderProps.userState?.email})
             }).then( response => {
                 setOpen(true)
                 setSuccess(response.ok)
@@ -166,6 +186,7 @@ export function OrderComponent(props: OrderProps & FormikProps<Order>) {
         open,
         setOpen,
         success,
+        useAnonymousCustomer = false
     } = props
 
     let [customers, setCustomers] = useState<Customer[]>([]);
@@ -240,6 +261,10 @@ export function OrderComponent(props: OrderProps & FormikProps<Order>) {
         setFieldValue("customer", newValue)
     },[setFieldValue])
 
+    let onAnonymousCustomerChange = useCallback((event: React.ChangeEvent<HTMLInputElement> ) => {
+        setFieldValue("anonymousCustomer", event.target.value);
+    }, [setFieldValue])
+
     let onProductsChange = useCallback((productsAndQuantity: SelectedProductQuantity[]) => {
         setFieldValue("products",productsAndQuantity);
     },[setFieldValue])
@@ -264,27 +289,33 @@ export function OrderComponent(props: OrderProps & FormikProps<Order>) {
                 <form className={classes.form} >
                 <Grid container xs={12} md={12} lg={12} alignItems="baseline" spacing={2}>
                 <Grid item xs={12} md={12} lg={12} >
-                    <Autocomplete
-                        options={customers as Customer[]}
-                        value={values.customer}
-                        onChange={onCustomerChange}
-                        renderOption={( option: any ) => (<> 
-                                <span>{`${option.firstName} - ${option.postalCode}`}</span>
-                        </> )}
-                        renderInput={(params) => (
-                            <TextField
-                                {...params}
-                                label="Choose a Customer"
-                                variant="outlined"
-                            />
-                        )}
-                        getOptionLabel={ (option) => (option.firstName) }
-                        getOptionSelected={ (option, value) => (
-                            option.firstName === value.firstName &&
-                            option.email === value.email
-                        )}
-                    />
-                    {errors.customer && touched.customer && (<Typography className={classes.errorMessage} variant="caption" display="block" gutterBottom>{errors.customer}</Typography>)}
+                    {
+                        !useAnonymousCustomer && (
+                            <Autocomplete
+                            options={customers as Customer[]}
+                            value={values.customer}
+                            onChange={onCustomerChange}
+                            renderOption={( option: any ) => (<> 
+                                    <span>{`${option.firstName} - ${option.postalCode}`}</span>
+                            </> )}
+                            renderInput={(params) => (
+                                <TextField
+                                    {...params}
+                                    label="Choose a Customer"
+                                    variant="outlined"
+                                />
+                            )}
+                            getOptionLabel={ (option) => (option.firstName) }
+                            getOptionSelected={ (option, value) => (
+                                option.firstName === value.firstName &&
+                                option.email === value.email
+                            )}
+                        />
+                        )
+                    }
+                    { !useAnonymousCustomer && errors.customer && touched.customer && (<Typography className={classes.errorMessage} variant="caption" display="block" gutterBottom>{errors.customer}</Typography>)}
+                    { useAnonymousCustomer &&  <TextField id="outlined-basic" label="Customer Name" variant="outlined" value={values.customer} onChange={onAnonymousCustomerChange} fullWidth/> }
+                    { useAnonymousCustomer && errors.anonymousCustomer && touched.anonymousCustomer && (<Typography className={classes.errorMessage} variant="caption" display="block" gutterBottom>{errors.anonymousCustomer}</Typography>)}
                 </Grid>
                 <ProductDropdownAndSelectedProducts 
                     onChange = {() => {}}

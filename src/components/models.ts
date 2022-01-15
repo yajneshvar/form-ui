@@ -57,6 +57,7 @@ export type Customer = Static<typeof Customer>;
 export const Order = Record({
   products: Array(SelectedProductQuantity),
   customer: Customer.Or(Null),
+  anonymousCustomer: String.Or(Null),
   delivery: Boolean,
   channel: String,
   additionalNotes: String,

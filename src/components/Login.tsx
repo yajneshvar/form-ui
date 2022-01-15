@@ -2,7 +2,7 @@
 import React, { useEffect } from 'react';
 import { UserContext, AuthenticatedUser } from '../providers/UserProvider';
 import { Button, Card, CardContent, Grid, makeStyles, Typography } from '@material-ui/core';
-import { GoogleSignIn }  from "../login/Firebase";
+import { googleSignIn }  from "../login/Firebase";
 import { useHistory } from 'react-router';
 
 
@@ -27,7 +27,7 @@ function LoginButton({user}: LoginProps) {
 
   let login = (event: any) => {
     event?.preventDefault();
-    GoogleSignIn();
+    googleSignIn();
   } 
 
   // useEffect(() => {

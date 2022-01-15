@@ -258,13 +258,9 @@ export function BookDropdown(props: BookDropdownProps) {
     let [types, setTypes] = useState<string[]>([]);
     let [selectedType, setSelectedType] = useState<string>("");
 
-    const {response, error } = useFetchWithAuth(`${url}/books`, {
+    const {response, status } = useFetchWithAuth(`${url}/books`, {
       method: 'GET'
     });
-
-    // if (error) {
-    //   throw error
-    // }
 
     useEffect(() => {
       if (response?.ok) {
