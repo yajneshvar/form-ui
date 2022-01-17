@@ -13,9 +13,9 @@ export function fetchWithAuth(url: string, request: RequestInit) {
                     'Authorization': `Bearer ${idToken}`
                 }
             })
-        } else {
+        } 
             throw Error("User not authenticated")
-        }
+        
     })
    
 }

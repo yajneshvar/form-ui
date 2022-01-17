@@ -1,12 +1,11 @@
-import React, { createContext, useEffect, useState } from 'react'
-import { auth, getCredentials, getCurrentUser }  from "../login/Firebase";
+import React, { createContext, useEffect, useState , useReducer } from 'react'
 import  firebase from 'firebase'
 import {
     Route,
     Redirect,
     RouteProps,
   } from "react-router-dom";
-import { useReducer } from 'react';
+import { auth, getCredentials }  from "../login/Firebase";
 
 
 export type AuthenticatedUser = firebase.User | null;
@@ -91,9 +90,7 @@ export default function UserProvider(props :any) {
 export function PrivateRoute(props : RouteProps) {
     return (
         <UserContext.Consumer>
-            {(user) => {
-                    return <RedirectOrRoute {...props} user={user} />
-                }
+            {(user) => <RedirectOrRoute {...props} user={user} />
             }
         </UserContext.Consumer>
     )
@@ -111,9 +108,10 @@ interface AuthenticationState {
 
 
 function RedirectOrRoute(props: RouteProps & AuthenticatedUserProps) {
-    let { children, user, ...rest } = props;
-    let initialAuthState: AuthenticationState = user ? {status: "LOGGED_IN"}  : {status: "LOGGED_OUT"}
-    let [authenticationStatus, dispatchAuthStatus] = useReducer((authState: AuthenticationState, action: AuthenticationStatus) => {
+    const { children, user, ...rest } = props;
+    const initialAuthState: AuthenticationState = user ? {status: "LOGGED_IN"}  : {status: "LOGGED_OUT"}
+    const [authenticationStatus, dispatchAuthStatus] = useReducer((authState: AuthenticationState, action: AuthenticationStatus) => {
+        // eslint-disable-next-line no-param-reassign
         authState.status = action;
         return authState;
     }, initialAuthState)
@@ -134,32 +132,30 @@ function RedirectOrRoute(props: RouteProps & AuthenticatedUserProps) {
     return (
         <Route
         {...rest}
-        render={({location}) => {
+        render={() => {
             if (authenticationStatus.status === "LOGGED_OUT") {
                 return (
                     <Route
                     {...rest}
-                    render={({location}) => {
-                            return (<Redirect
+                    render={({location: redirectLocation }) => (<Redirect
                                 to={{
                                     pathname: "/login",
-                                    state: {from: location}
+                                    state: {from: redirectLocation}
                                 }}
-                            />)
-                    } }
+                            />) }
                 />
                 )
-            } else if (authenticationStatus.status === "LOGGED_IN"){
+            } if (authenticationStatus.status === "LOGGED_IN"){
                 return (
                     <Route
                     {...props}
                     />
                 )
-            } else {
+            } 
                 return (<div>
                     Loading page....
                 </div>);
-            }
+            
         } }
         />
     );

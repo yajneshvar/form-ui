@@ -5,12 +5,12 @@ import Grid from '@material-ui/core/Grid';
 import Autocomplete from '@material-ui/lab/Autocomplete'
 import { makeStyles, createStyles, Theme } from '@material-ui/core/styles';
 import {  Select, MenuItem, InputLabel, FormControl, FormControlLabel, Checkbox, Typography, CircularProgress, TextareaAutosize, SnackbarCloseReason } from '@material-ui/core';
+import { FormikProps, withFormik } from 'formik';
+import { string, object, number, array, boolean } from 'yup';
 import { UserContext, AuthenticatedUser } from '../providers/UserProvider';
 import { Customer, Order, SelectedProductQuantity } from './models';
 import { ProductDropdownAndSelectedProducts } from './ProductDropdown';
 import SuccessOrFailureAlert from './SuccesOrFailureAlert';
-import { FormikProps, withFormik } from 'formik';
-import { string, object, number, array, boolean } from 'yup';
 import { fetchWithAuth } from '../utils/auth';
 import { useFetchWithAuth } from '../hooks/fetchWithAuth';
 
@@ -58,7 +58,7 @@ export default function OrderForm() {
 
     return (
         <UserContext.Consumer>
-            {(userState) => <EnchancedOrder userState={userState} order={null} useAnonymousCustomer={false}></EnchancedOrder>}
+            {(userState) => <EnchancedOrder userState={userState} order={null} useAnonymousCustomer={false} />}
         </UserContext.Consumer>
     )
 }
@@ -66,7 +66,7 @@ export default function OrderForm() {
 export function OtherForm() {
     return (
         <UserContext.Consumer>
-            {(userState) => <EnchancedOrder userState={userState} order={null} useAnonymousCustomer={true}></EnchancedOrder>}
+            {(userState) => <EnchancedOrder userState={userState} order={null} useAnonymousCustomer />}
         </UserContext.Consumer>
     )
 }
@@ -89,9 +89,9 @@ interface OrderProps {
 }
 
 function EnchancedOrder(orderProps: EnhancedOrderProps) {
-    let [open, setOpen] = useState(false)
-    let [message, setMessage] = useState("")
-    let [success, setSuccess] = useState(false)
+    const [open, setOpen] = useState(false)
+    const [message, setMessage] = useState("")
+    const [success, setSuccess] = useState(false)
 
     const productSchema = object({
         id: string().required(),
@@ -127,12 +127,16 @@ function EnchancedOrder(orderProps: EnhancedOrderProps) {
                 lastName: string().required(),
                 postalCode: string().required(),
                 email: string().required(),
+            // eslint-disable-next-line func-names
             }).test(function (customer) {
+                // eslint-disable-next-line react/no-this-in-sfc
                 const {anonymousCustomer} = this.parent;
                 if (!anonymousCustomer) return customer != null;
                 return true;
             }).nullable(),
+            // eslint-disable-next-line func-names
             anonymousCustomer: string().test(function(anonymousCustomer) {
+                // eslint-disable-next-line react/no-this-in-sfc
                 const {customer} = this.parent;
                 if (!customer) return anonymousCustomer != null;
                 return true;
@@ -143,7 +147,7 @@ function EnchancedOrder(orderProps: EnhancedOrderProps) {
             deliveryNotes: string().default(""),
         }),
         handleSubmit: (values) => {
-            const products = values.products.map((productQuantity) => { return {...productQuantity.product, startCount: productQuantity.startCount } });
+            const products = values.products.map((productQuantity) => ({...productQuantity.product, startCount: productQuantity.startCount }));
             const { customer, ...rest} = values;
             fetchWithAuth(`${url}/orders`,{
                 method: "POST",
@@ -169,13 +173,13 @@ function EnchancedOrder(orderProps: EnhancedOrderProps) {
     }) (OrderComponent)
 
     return (
-        <EnhancedOrder {...{...orderProps, success, open, setOpen, message }}></EnhancedOrder>
+        <EnhancedOrder {...{...orderProps, success, open, setOpen, message }} />
     )
 }
 
 export function OrderComponent(props: OrderProps & FormikProps<Order>) {
 
-    let {
+    const {
         errors,
         touched,
         values,
@@ -189,10 +193,10 @@ export function OrderComponent(props: OrderProps & FormikProps<Order>) {
         useAnonymousCustomer = false
     } = props
 
-    let [customers, setCustomers] = useState<Customer[]>([]);
-    let [channels, setChannels] = useState<string[]>([]);
+    const [customers, setCustomers] = useState<Customer[]>([]);
+    const [channels, setChannels] = useState<string[]>([]);
 
-    let storageEventHandler = useCallback((event: StorageEvent) => {
+    const storageEventHandler = useCallback((event: StorageEvent) => {
         let newCustomers: Customer[] = []
         if (event.key === "latestCustomer" && event.newValue !== null) {
             newCustomers = JSON.parse(event.newValue) as Customer[]
@@ -239,33 +243,33 @@ export function OrderComponent(props: OrderProps & FormikProps<Order>) {
         }
     },[channelPayload, channelError])
 
-    let onChannelSelected = useCallback((event: React.ChangeEvent<{ value: unknown }>) => {
-        let channelSelection = event.target.value as string
+    const onChannelSelected = useCallback((event: React.ChangeEvent<{ value: unknown }>) => {
+        const channelSelection = event.target.value as string
         setFieldValue("channel", channelSelection);
       },[setFieldValue]);
 
 
-    let onDeliverySelected = (event: React.ChangeEvent<HTMLInputElement>, checked: boolean) => {
+    const onDeliverySelected = (event: React.ChangeEvent<HTMLInputElement>, checked: boolean) => {
         setFieldValue("delivery", checked);
     }
 
-    let onPaymentNotesChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const onPaymentNotesChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
         setFieldValue("additionalNotes", event.target.value);
       };
 
-    let onDeliveryNotesChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const onDeliveryNotesChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
         setFieldValue("deliveryNotes", event.target.value);
       };
 
-    let onCustomerChange = useCallback((event: any, newValue: any) => {
+    const onCustomerChange = useCallback((event: any, newValue: any) => {
         setFieldValue("customer", newValue)
     },[setFieldValue])
 
-    let onAnonymousCustomerChange = useCallback((event: React.ChangeEvent<HTMLInputElement> ) => {
+    const onAnonymousCustomerChange = useCallback((event: React.ChangeEvent<HTMLInputElement> ) => {
         setFieldValue("anonymousCustomer", event.target.value);
     }, [setFieldValue])
 
-    let onProductsChange = useCallback((productsAndQuantity: SelectedProductQuantity[]) => {
+    const onProductsChange = useCallback((productsAndQuantity: SelectedProductQuantity[]) => {
         setFieldValue("products",productsAndQuantity);
     },[setFieldValue])
 
@@ -277,9 +281,9 @@ export function OrderComponent(props: OrderProps & FormikProps<Order>) {
         setOpen(false);
     };
 
-    let classes = useStyles();
+    const classes = useStyles();
 
-    let submit = useCallback((event: any) => {
+    const submit = useCallback((event: any) => {
         event.preventDefault();
         handleSubmit()
     }, [handleSubmit])
@@ -295,9 +299,7 @@ export function OrderComponent(props: OrderProps & FormikProps<Order>) {
                             options={customers as Customer[]}
                             value={values.customer}
                             onChange={onCustomerChange}
-                            renderOption={( option: any ) => (<> 
-                                    <span>{`${option.firstName} - ${option.postalCode}`}</span>
-                            </> )}
+                            renderOption={( option: any ) => (<span>{`${option.firstName} - ${option.postalCode}`}</span> )}
                             renderInput={(params) => (
                                 <TextField
                                     {...params}
@@ -318,7 +320,6 @@ export function OrderComponent(props: OrderProps & FormikProps<Order>) {
                     { useAnonymousCustomer && errors.anonymousCustomer && touched.anonymousCustomer && (<Typography className={classes.errorMessage} variant="caption" display="block" gutterBottom>{errors.anonymousCustomer}</Typography>)}
                 </Grid>
                 <ProductDropdownAndSelectedProducts 
-                    onChange = {() => {}}
                     products = {values.products}
                     setProducts = {onProductsChange}
                     errors = {errors}
@@ -336,11 +337,11 @@ export function OrderComponent(props: OrderProps & FormikProps<Order>) {
 
                 <Grid item xs={6} className={classes.padding} >
                     <FormControlLabel
-                        control={<Checkbox checked={values.delivery} onChange={onDeliverySelected}></Checkbox>}
+                        control={<Checkbox checked={values.delivery} onChange={onDeliverySelected} />}
                         label="Delivery Required"
-                    ></FormControlLabel>
+                     />
                                     { values.delivery && 
-                        <TextareaAutosize value={values.deliveryNotes} onChange={onDeliveryNotesChange} id="delivery-notes" rowsMin={3} placeholder="Delivery Notes"></TextareaAutosize>
+                        <TextareaAutosize value={values.deliveryNotes} onChange={onDeliveryNotesChange} id="delivery-notes" rowsMin={3} placeholder="Delivery Notes" />
                     }
 
                 </Grid>
@@ -355,7 +356,7 @@ export function OrderComponent(props: OrderProps & FormikProps<Order>) {
                 </Button>
             </Grid>
             <Grid container item xs={6} md={12} justify="center" spacing={2}>
-                {isSubmitting && (<CircularProgress></CircularProgress>)}
+                {isSubmitting && (<CircularProgress />)}
             </Grid>
             <Grid item xs={12}>
                 <SuccessOrFailureAlert

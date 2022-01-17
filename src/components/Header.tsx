@@ -6,10 +6,10 @@ import Typography from '@material-ui/core/Typography';
 import IconButton from '@material-ui/core/IconButton';
 import MenuIcon from '@material-ui/icons/Menu';
 import MenuItem from '@material-ui/core/MenuItem';
-import Login from './Login';
-import Logout from './Logout';
 import { Drawer } from '@material-ui/core';
 import { NavLink } from 'react-router-dom';
+import Login from './Login';
+import Logout from './Logout';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -60,8 +60,8 @@ export default function Header() {
           <Typography variant="h6" className={classes.title}>
             Forms
           </Typography>
-          <Login></Login>
-          <Logout></Logout>
+          <Login />
+          <Logout />
         </Toolbar>
       </AppBar>
     </div>

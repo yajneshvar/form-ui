@@ -6,15 +6,13 @@ import { getIdToken } from "../login/Firebase";
 export function useFetchCallbackWithAuth(url: string) {
     const enrichedFetch = useCallback(async () => {
         const token = await getIdToken();
-         return (request: RequestInit) => {
-            return fetch(url, {
+         return (request: RequestInit) => fetch(url, {
                 ...request,
                 headers: {
                     ...request.headers,
                     'Authentication': `Bearer ${token}`
                 }
-            });
-        }
+            })
     }, [url])
     const { result: fetchWithAuth, error } = useAsync(enrichedFetch)
 
@@ -25,23 +23,23 @@ export function useFetchCallbackWithAuth(url: string) {
         if (fetchWithAuth) {
             return fetchWithAuth(request)
         }
+        return Promise.resolve({});
     }, [fetchWithAuth, error]);
 }
 export function useFetchWithAuth(url: string, request: RequestInit) {
     const enrichedFetch = useCallback(async () => {
         const token = await getIdToken();
         if (token) {
-            return await fetch(url, {
+            const response = await fetch(url, {
                 ...request,
                 headers: {
                     ...request.headers,
                     'Authorization': `Bearer ${token}`
                 }
             });
-        } 
-        // else {
-        //     throw Error("No valid id token");
-        // }
+            return response;
+        }
+        return null;
     }, [url, request])
     const result = useAsync(enrichedFetch)
 

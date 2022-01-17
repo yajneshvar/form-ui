@@ -1,17 +1,15 @@
 
 import React, { useEffect } from 'react';
-import { UserContext, AuthenticatedUser } from '../providers/UserProvider';
 import { Button, Card, CardContent, Grid, makeStyles, Typography } from '@material-ui/core';
-import { googleSignIn }  from "../login/Firebase";
 import { useHistory } from 'react-router';
+import { UserContext, AuthenticatedUser } from '../providers/UserProvider';
+import { googleSignIn }  from "../login/Firebase";
 
 
 export default function Login() {
     return (
         <UserContext.Consumer>
-            {(userState) => {
-              return <LoginButton user={userState} />
-            }}
+            {(userState) => <LoginButton user={userState} />}
         </UserContext.Consumer>
     )
 
@@ -23,29 +21,16 @@ interface LoginProps {
 
 function LoginButton({user}: LoginProps) {
 
-  let history = useHistory(); 
-
-  let login = (event: any) => {
+  const login = (event: any) => {
     event?.preventDefault();
     googleSignIn();
   } 
 
-  // useEffect(() => {
-  //     if (user !== null) {
-  //       history.replace("/order");
-  //     }
-  // }, [user, history])
-
-
-  return (
-    <>
-    { user == null &&  (
-      <Button  variant="contained" color="secondary" onClick={login} disableElevation>Sign In With Google</Button>
-   ) }
-   </>
-
-  )
-
+  if (user == null) {
+    <Button  variant="contained" color="secondary" onClick={login} disableElevation>Sign In With Google</Button>
+  } 
+    // eslint-disable-next-line react/jsx-no-useless-fragment
+    return <></>;
 }
 
 const useStyles = makeStyles(
@@ -68,7 +53,7 @@ export function LoginPage() {
             <Card>
               <CardContent>
                 <Typography>Please login to proceed</Typography>
-                <Login></Login>
+                <Login />
               </CardContent>
             </Card>
           </Grid>

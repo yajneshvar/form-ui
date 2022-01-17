@@ -6,7 +6,7 @@ import User, { UserValue } from './User';
 
 export function UserList() {
 
-    let url = process.env.REACT_APP_API_URL ||  "http://localhost:8080";
+    const url = process.env.REACT_APP_API_URL ||  "http://localhost:8080";
     const [users, setUsers] = useState<UserValue[]>([]);
 
     useEffect(() => {
@@ -14,7 +14,7 @@ export function UserList() {
             method: 'GET'
         }).then( (response) => {
             if (response.ok) {
-                response.json().then( users => setUsers(users))
+                response.json().then( fetchedUsers => setUsers(fetchedUsers))
             }
         }).catch(err => {
             alert("Failed to fetch customers")
@@ -39,8 +39,8 @@ export function UserList() {
 
 
 export function UpdateUser(props: any) {
-    let { id } = props.params;
-    let url = process.env.REACT_APP_API_URL ||  "http://localhost:8080";
+    const { id } = props.params;
+    const url = process.env.REACT_APP_API_URL ||  "http://localhost:8080";
     const [user, setUser] = useState<UserValue|null>(null);
     const {response, error} = useFetchWithAuth(`${url}/user/${id}`, {
         method: 'GET'
@@ -52,7 +52,7 @@ export function UpdateUser(props: any) {
     
     useEffect(() => {
         if (response?.ok) {
-            response.json().then( user => setUser(user))
+            response.json().then( updatedUser => setUser(updatedUser))
         }
     }, [response])
 

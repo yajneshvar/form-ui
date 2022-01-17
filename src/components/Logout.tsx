@@ -5,21 +5,16 @@ import { googleLogout }  from "../login/Firebase";
 import { UserContext, AuthenticatedUser } from "../providers/UserProvider";
 
 export default function Logout() {
-    let history = useHistory();
+    const history = useHistory();
     const logout = (event: any) => {
         event?.preventDefault();
         googleLogout();
         history.push("/")
     }
-    return (
-        <UserContext.Consumer>
-           { (userState) => {
-               return <LogoutButton userState={userState} logout={logout}/>
-            } 
-             
-           }
-        </UserContext.Consumer>
-    )
+    return <UserContext.Consumer>
+            { (userState) => <LogoutButton userState={userState} logout={logout}/> }
+            </UserContext.Consumer>
+    
 
 }
 
@@ -31,7 +26,7 @@ interface LogoutProps {
  function LogoutButton({userState, logout}: LogoutProps) {
     if (userState !== null) {
         return (<Button variant="contained" color="secondary" onClick={logout} disableElevation>Logout</Button>)
-    } else {
-        return (<></>)
     }
+    // eslint-disable-next-line react/jsx-no-useless-fragment
+    return <></>; 
  }

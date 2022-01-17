@@ -33,9 +33,9 @@ const useStylesCell = makeStyles(() =>
   }),
 );
 
-const GridCellExpand = React.memo(function GridCellExpand(
+const GridCellExpand = React.memo((
   props: GridCellExpandProps,
-) {
+) => {
   const { width, value } = props;
   const wrapper = React.useRef<HTMLDivElement | null>(null);
   const cellDiv = React.useRef(null);
@@ -154,17 +154,17 @@ const useStyles = makeStyles( (theme: Theme) => createStyles(
 
 export function ProductDropdownAndSelectedProducts(props: ProductDropdownProps) {
      
-    let setProducts =  props.setProducts;
-    let products = props.products;
-    let onDeleteProduct = useCallback((id: string) => {
+    const {setProducts} = props;
+    const {products} = props;
+    const onDeleteProduct = useCallback((id: string) => {
         setProducts(products.filter((item: any) => item.product.code !== id))
     },[products, setProducts]);
 
-    let onUpdateProductQuantity = useCallback((id: string, quantity: number) => {
-        let product = products.find( (it) => it.product.id === id);
+    const onUpdateProductQuantity = useCallback((id: string, quantity: number) => {
+        const product = products.find( (it) => it.product.id === id);
         if (product !== undefined) {
             product.startCount = quantity;
-            let filteredProducts = products.filter((selectedProduct) => selectedProduct.product.id !== id);
+            const filteredProducts = products.filter((selectedProduct) => selectedProduct.product.id !== id);
             setProducts([...filteredProducts, product ])
         }
     }, [products, setProducts])
@@ -183,30 +183,26 @@ interface SelectedProductsProps {
 }
 
 function SelectedProducts(props: SelectedProductsProps) {
-    let productsAndQuantites: SelectedProductQuantity[]  = props.products;
-    let onDeleteProduct = props.onDeleteProduct;
-    let onUpdateProductQuantity = props.onUpdated;
-    let renderRemovableCell = (params: GridCellParams) => {
-        return (
+    const productsAndQuantites: SelectedProductQuantity[]  = props.products;
+    const {onDeleteProduct} = props;
+    const onUpdateProductQuantity = props.onUpdated;
+    const renderRemovableCell = (params: GridCellParams) => (
             <IconButton onClick={(event: any) => {onDeleteProduct(params.id.toString())} }>
                  <HighlightOffIcon color="secondary"/>
             </IconButton>
         )
-    }
 
-    let columns = [ {field: "id", type: 'string'}, {field: "Title", width: 450, type: 'string', renderCell: renderCellExpand}, {field: "Quantity", width: 150, editable: true, type: 'number'}, {field: "Remove", width: 150, renderCell: renderRemovableCell}]
-    let rows = productsAndQuantites.map( (bq) => {
-        return {
+    const columns = [ {field: "id", type: 'string'}, {field: "Title", width: 450, type: 'string', renderCell: renderCellExpand}, {field: "Quantity", width: 150, editable: true, type: 'number'}, {field: "Remove", width: 150, renderCell: renderRemovableCell}]
+    const rows = productsAndQuantites.map( (bq) => ({
             id: bq.product.code,
             Title: bq.product.title,
             Quantity: bq.startCount,
             Remove: bq.product.id
-        }
-    })
-    let handleCellChange = (params: GridEditCellPropsParams, event?: any) => {
-        let productId = params.id;
+        }))
+    const handleCellChange = (params: GridEditCellPropsParams, event?: any) => {
+        const productId = params.id;
         if (params.field === "Quantity") {
-            let value = params.props.value
+            const {value} = params.props
             if (value) {
                 onUpdateProductQuantity(productId as string, parseInt(value as string))
             }
@@ -228,7 +224,8 @@ function SelectedProducts(props: SelectedProductsProps) {
 interface ProductDropdownProps {
     products: SelectedProductQuantity[],
     setProducts: (value: SelectedProductQuantity[]) => void,
-    onChange: () => void,
+    // eslint-disable-next-line react/require-default-props
+    onChange?: () => void | undefined,
     errors: any,
     touched: any,
 }
@@ -237,26 +234,28 @@ interface ProductDropdownProps {
 
 export function ProductDropdown(props: ProductDropdownProps) {
 
-    let products: SelectedProductQuantity[]  = props.products;
-    let setProducts: (value: SelectedProductQuantity[]) => void = props.setProducts;
-    let onChange: () => void = props.onChange
-    let onProductsChange = useCallback((products: SelectedProductQuantity[]) => {
-        setProducts(products);
-        onChange();
+    const {products} = props;
+    const {setProducts} = props;
+    const {onChange} = props
+    const onProductsChange = useCallback((selectedProducts: SelectedProductQuantity[]) => {
+        setProducts(selectedProducts);
+        if (onChange) {
+          onChange();
+        }
     },[setProducts, onChange])
 
-    let errors = props.errors;
+    const {errors} = props;
 
-    let url = process.env.REACT_APP_API_URL ||  "http://localhost:8080";
+    const url = process.env.REACT_APP_API_URL ||  "http://localhost:8080";
 
-    let classes = useStyles();
+    const classes = useStyles();
 
-    let [product, setProduct] = useState<Product | null>(null);
-    let [quantity, setQuantity] = useState(1);
-    let [filteredProductList, setFilteredProductList] = useState<Product[]>([]);
-    let [productList, setProductsList] = useState<Product[]>([]);
-    let [types, setTypes] = useState<string[]>([]);
-    let [selectedType, setSelectedType] = useState<string>("");
+    const [product, setProduct] = useState<Product | null>(null);
+    const [quantity, setQuantity] = useState(1);
+    const [filteredProductList, setFilteredProductList] = useState<Product[]>([]);
+    const [productList, setProductsList] = useState<Product[]>([]);
+    const [types, setTypes] = useState<string[]>([]);
+    const [selectedType, setSelectedType] = useState<string>("");
 
     const {response, error } = useFetchWithAuth(`${url}/books/items`, {
       method: 'GET'
@@ -271,17 +270,17 @@ export function ProductDropdown(props: ProductDropdownProps) {
         response.json().then( listOfProducts => {
             setProductsList(listOfProducts)
             setFilteredProductList(listOfProducts)
-            let retrievedProducts = listOfProducts as Product[];
-            let uniqueTypes = new Set(retrievedProducts.map(product => product.type));
-            let uniqTypeList: string[] = []
+            const retrievedProducts = listOfProducts as Product[];
+            const uniqueTypes = new Set(retrievedProducts.map(retrievedProduct => retrievedProduct.type));
+            const uniqTypeList: string[] = []
             uniqueTypes.forEach ( type => uniqTypeList.push(type))
             setTypes(uniqTypeList);
         })
       }
     }, [response])
 
-    let onTypeSelected =  (event: React.ChangeEvent<{ value: unknown }>) => {
-        let newType = event.target.value as string
+    const onTypeSelected =  (event: React.ChangeEvent<{ value: unknown }>) => {
+        const newType = event.target.value as string
         setSelectedType(newType);
         setProduct(null);
         if (newType !== "") {
@@ -289,14 +288,14 @@ export function ProductDropdown(props: ProductDropdownProps) {
         }
       };
 
-    let onQuantityChange = useCallback((event: any) => {
-        let value: number = parseInt(event.target.value)
+    const onQuantityChange = useCallback((event: any) => {
+        const value: number = parseInt(event.target.value)
         setQuantity(value)
     }, [setQuantity])
 
 
-    let onAddProduct = useCallback(() => {
-        let itemToupdate = products.find( (items) => items.product.id === product?.id)
+    const onAddProduct = useCallback(() => {
+        const itemToupdate = products.find( (items) => items.product.id === product?.id)
         if (product !== null && itemToupdate === undefined) {
             onProductsChange([...products, {product, startCount: quantity, endCount: null, netCount: null}])
         } else if (itemToupdate) {
@@ -305,7 +304,7 @@ export function ProductDropdown(props: ProductDropdownProps) {
         }
     }, [products, onProductsChange, product, quantity]);
 
-    let onClickAdd = (event: any) => {
+    const onClickAdd = (event: any) => {
         event.preventDefault();
         onAddProduct();
     }
@@ -316,7 +315,7 @@ export function ProductDropdown(props: ProductDropdownProps) {
                 <Grid item xs={12} md={6}>
                     <FormControl variant="outlined" className={classes.formControl} fullWidth >
                         <InputLabel htmlFor="language-select">Language</InputLabel>
-                        <Select value={selectedType} onChange={onTypeSelected} id="language-select" fullWidth={true}>
+                        <Select value={selectedType} onChange={onTypeSelected} id="language-select" fullWidth>
                             { types.map( type =>  (<MenuItem key={type} value={type}>{type}</MenuItem>))}
                         </Select>
                     </FormControl>
@@ -331,18 +330,14 @@ export function ProductDropdown(props: ProductDropdownProps) {
                             onChange={(event: any, newValue: any) => {
                                 setProduct(newValue);
                             }}
-                            renderOption={( option: any ) => (<> 
-                                    <span>{`${option.title}`}</span>
-                            </> )}
-                            renderInput={(params) => {
-                                return (
+                            renderOption={( option: any ) => (<span>{`${option.title}`}</span> )}
+                            renderInput={(params) => (
                                     <TextField
                                         {...params}
                                         label="Choose a Product"
                                         variant="outlined"
                                     />
-                                )
-                            }}
+                                )}
                             getOptionLabel={ (option) => (`${option.title}`) }
                             getOptionSelected={ (option, value) => (
                                 option.id === value.id
@@ -351,15 +346,13 @@ export function ProductDropdown(props: ProductDropdownProps) {
                         (<Autocomplete
                             options={[]}
                             disabled
-                            renderInput={ (params) => {
-                                return (
+                            renderInput={ (params) => (
                                     <TextField
                                         {...params}
                                         label="Please select a language filter before choosing a product"
                                         variant="outlined"
                                     />
-                                )
-                            }}
+                                )}
                         
                         />)
 

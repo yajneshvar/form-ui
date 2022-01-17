@@ -33,9 +33,9 @@ const useStylesCell = makeStyles(() =>
   }),
 );
 
-const GridCellExpand = React.memo(function GridCellExpand(
+const GridCellExpand = React.memo((
   props: GridCellExpandProps,
-) {
+) => {
   const { width, value } = props;
   const wrapper = React.useRef<HTMLDivElement | null>(null);
   const cellDiv = React.useRef(null);
@@ -154,17 +154,17 @@ const useStyles = makeStyles( (theme: Theme) => createStyles(
 
 export function BookDropdownAndSelectedBooks(props: BookDropdownProps) {
      
-    let setBooks =  props.setBooks;
-    let books = props.books;
-    let onDeleteBook = useCallback((code: string) => {
+    const {setBooks} = props;
+    const {books} = props;
+    const onDeleteBook = useCallback((code: string) => {
         setBooks(books.filter((item: any) => item.book.code !== code))
     },[books, setBooks]);
 
-    let onUpdateBookQuantity = useCallback((code: string, quantity: number) => {
-        let book = books.find( (it) => it.book.code === code);
+    const onUpdateBookQuantity = useCallback((code: string, quantity: number) => {
+        const book = books.find( (it) => it.book.code === code);
         if (book !== undefined) {
             book.startCount = quantity;
-            let filteredBooks = books.filter((bq) => bq.book.code !== code);
+            const filteredBooks = books.filter((bq) => bq.book.code !== code);
             setBooks([...filteredBooks, book ])
         }
     }, [books, setBooks])
@@ -183,30 +183,26 @@ interface SelectedBooksProps {
 }
 
 function SelectedBooks(props: SelectedBooksProps) {
-    let booksAndQuantites: SelectedBookQuantity[]  = props.books;
-    let onDeleteBook = props.onDeleteBook;
-    let onUpdateBookQuantity = props.onUpdated;
-    let renderRemovableCell = (params: GridCellParams) => {
-        return (
+    const booksAndQuantites: SelectedBookQuantity[]  = props.books;
+    const {onDeleteBook} = props;
+    const onUpdateBookQuantity = props.onUpdated;
+    const renderRemovableCell = (params: GridCellParams) => (
             <IconButton onClick={(event: any) => {onDeleteBook(params.id.toString())} }>
                  <HighlightOffIcon color="secondary"/>
             </IconButton>
         )
-    }
 
-    let columns = [ {field: "id", type: 'string'}, {field: "Title", width: 450, type: 'string', renderCell: renderCellExpand}, {field: "Quantity", width: 150, editable: true, type: 'number'}, {field: "Remove", width: 150, renderCell: renderRemovableCell}]
-    let rows = booksAndQuantites.map( (bq) => {
-        return {
+    const columns = [ {field: "id", type: 'string'}, {field: "Title", width: 450, type: 'string', renderCell: renderCellExpand}, {field: "Quantity", width: 150, editable: true, type: 'number'}, {field: "Remove", width: 150, renderCell: renderRemovableCell}]
+    const rows = booksAndQuantites.map( (bq) => ({
             id: bq.book.code,
             Title: bq.book.title,
             Quantity: bq.startCount,
             Remove: bq.book.code
-        }
-    })
-    let handleCellChange = (params: GridEditCellPropsParams, event?: any) => {
-        let bookId = params.id;
+        }))
+    const handleCellChange = (params: GridEditCellPropsParams, event?: any) => {
+        const bookId = params.id;
         if (params.field === "Quantity") {
-            let value = params.props.value
+            const {value} = params.props
             if (value) {
                 onUpdateBookQuantity(bookId as string, parseInt(value as string))
             }
@@ -237,26 +233,26 @@ interface BookDropdownProps {
 
 export function BookDropdown(props: BookDropdownProps) {
 
-    let books: SelectedBookQuantity[]  = props.books;
-    let setBooks: (value: SelectedBookQuantity[]) => void = props.setBooks;
-    let onChange: () => void = props.onChange
-    let onBooksChange = useCallback((books: SelectedBookQuantity[]) => {
-        setBooks(books);
+    const {books} = props;
+    const {setBooks} = props;
+    const {onChange} = props
+    const onBooksChange = useCallback((selectedBooks: SelectedBookQuantity[]) => {
+        setBooks(selectedBooks);
         onChange();
     },[setBooks, onChange])
 
-    let errors = props.errors;
+    const {errors} = props;
 
-    let url = process.env.REACT_APP_API_URL ||  "http://localhost:8080";
+    const url = process.env.REACT_APP_API_URL ||  "http://localhost:8080";
 
-    let classes = useStyles();
+    const classes = useStyles();
 
-    let [book, setBook] = useState<Book | null>(null);
-    let [quantity, setQuantity] = useState(1);
-    let [filteredBookList, setFilteredBookList] = useState<Book[]>([]);
-    let [bookList, setBooksList] = useState<Book[]>([]);
-    let [types, setTypes] = useState<string[]>([]);
-    let [selectedType, setSelectedType] = useState<string>("");
+    const [book, setBook] = useState<Book | null>(null);
+    const [quantity, setQuantity] = useState(1);
+    const [filteredBookList, setFilteredBookList] = useState<Book[]>([]);
+    const [bookList, setBooksList] = useState<Book[]>([]);
+    const [types, setTypes] = useState<string[]>([]);
+    const [selectedType, setSelectedType] = useState<string>("");
 
     const {response, status } = useFetchWithAuth(`${url}/books`, {
       method: 'GET'
@@ -267,17 +263,17 @@ export function BookDropdown(props: BookDropdownProps) {
         response.json().then( listOfBooks => {
             setBooksList(listOfBooks)
             setFilteredBookList(listOfBooks)
-            let retrievedBooks = listOfBooks as Book[];
-            let uniqueTypes = new Set(retrievedBooks.map(book => book.type));
-            let uniqTypeList: string[] = []
+            const retrievedBooks = listOfBooks as Book[];
+            const uniqueTypes = new Set(retrievedBooks.map(retrievedBook => retrievedBook.type));
+            const uniqTypeList: string[] = []
             uniqueTypes.forEach ( type => uniqTypeList.push(type))
             setTypes(uniqTypeList);
         })
       }
     }, [response])
 
-    let onTypeSelected =  (event: React.ChangeEvent<{ value: unknown }>) => {
-        let newType = event.target.value as string
+    const onTypeSelected =  (event: React.ChangeEvent<{ value: unknown }>) => {
+        const newType = event.target.value as string
         setSelectedType(newType);
         setBook(null);
         if (newType !== "") {
@@ -285,14 +281,14 @@ export function BookDropdown(props: BookDropdownProps) {
         }
       };
 
-    let onQuantityChange = useCallback((event: any) => {
-        let value: number = parseInt(event.target.value)
+    const onQuantityChange = useCallback((event: any) => {
+        const value: number = parseInt(event.target.value)
         setQuantity(value)
     }, [setQuantity])
 
 
-    let onAddBook = useCallback(() => {
-        let itemToupdate = books.find( (items) => items.book.code === book?.code)
+    const onAddBook = useCallback(() => {
+        const itemToupdate = books.find( (items) => items.book.code === book?.code)
         if (book !== null && itemToupdate === undefined) {
             onBooksChange([...books, {book, startCount: quantity, endCount: null, netCount: null}])
         } else if (itemToupdate) {
@@ -301,7 +297,7 @@ export function BookDropdown(props: BookDropdownProps) {
         }
     }, [books, onBooksChange, book, quantity]);
 
-    let onClickAdd = (event: any) => {
+    const onClickAdd = (event: any) => {
         event.preventDefault();
         onAddBook();
     }
@@ -312,7 +308,7 @@ export function BookDropdown(props: BookDropdownProps) {
                 <Grid item xs={12} md={6}>
                     <FormControl variant="outlined" className={classes.formControl} fullWidth >
                         <InputLabel htmlFor="language-select">Language</InputLabel>
-                        <Select value={selectedType} onChange={onTypeSelected} id="language-select" fullWidth={true}>
+                        <Select value={selectedType} onChange={onTypeSelected} id="language-select" fullWidth>
                             { types.map( type =>  (<MenuItem key={type} value={type}>{type}</MenuItem>))}
                         </Select>
                     </FormControl>
@@ -327,18 +323,14 @@ export function BookDropdown(props: BookDropdownProps) {
                             onChange={(event: any, newValue: any) => {
                                 setBook(newValue);
                             }}
-                            renderOption={( option: any ) => (<> 
-                                    <span>{`${option.title}`}</span>
-                            </> )}
-                            renderInput={(params) => {
-                                return (
+                            renderOption={( option: any ) => (<span>{`${option.title}`}</span> )}
+                            renderInput={(params) => (
                                     <TextField
                                         {...params}
                                         label="Choose a Book"
                                         variant="outlined"
                                     />
-                                )
-                            }}
+                                )}
                             getOptionLabel={ (option) => (`${option.title}`) }
                             getOptionSelected={ (option, value) => (
                                 option.code === value.code
@@ -347,15 +339,13 @@ export function BookDropdown(props: BookDropdownProps) {
                         (<Autocomplete
                             options={[]}
                             disabled
-                            renderInput={ (params) => {
-                                return (
+                            renderInput={ (params) => (
                                     <TextField
                                         {...params}
                                         label="Please select a language filter before choosing a book"
                                         variant="outlined"
                                     />
-                                )
-                            }}
+                                )}
                         
                         />)
 

@@ -4,8 +4,8 @@ import * as Yup from 'yup';
 import TextField from '@material-ui/core/TextField';
 import Button from '@material-ui/core/Button';
 import Grid from '@material-ui/core/Grid'
-import { AuthenticatedUser, UserContext } from '../providers/UserProvider';
 import { CircularProgress, SnackbarCloseReason } from '@material-ui/core';
+import { AuthenticatedUser, UserContext } from '../providers/UserProvider';
 import SuccesOrFailureAlert from './SuccesOrFailureAlert';
 import { fetchWithAuth } from '../utils/auth';
 
@@ -47,13 +47,13 @@ interface UserProps extends UserFormProps {
 
 function User(props: UserProps) {
 
-  let [submitting, setSubmitting] = useState(false);
-  let [submitMessage, setSubmitMessage] = useState("");
-  let [openNotification, setOpenNotification] = useState(false);
-  let [success, setSuccess] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitMessage, setSubmitMessage] = useState("");
+  const [openNotification, setOpenNotification] = useState(false);
+  const [success, setSuccess] = useState(false);
 
-  let url = process.env.REACT_APP_API_URL ||  "http://localhost:8080";
-    let intialValues = props.user || {
+  const url = process.env.REACT_APP_API_URL ||  "http://localhost:8080";
+    const intialValues = props.user || {
         id: undefined,
         firstName: '',
         lastName: '',
@@ -78,8 +78,8 @@ function User(props: UserProps) {
       setSuccess(false);
   };
 
-    let onSubmit = (values: any) => {
-      let user = {creator: props.userState?.email, ...values}
+    const onSubmit = (values: any) => {
+      const user = {creator: props.userState?.email, ...values}
       setSubmitting(true);
       fetchWithAuth(`${url}/users`, {
         method: "POST",
@@ -92,7 +92,7 @@ function User(props: UserProps) {
         if (response.ok) {
             response.json().then(savedUser => {
               let users = []
-              let storedUsers = localStorage.getItem("latestCustomer")
+              const storedUsers = localStorage.getItem("latestCustomer")
               if (storedUsers !== null ) {
                 users = JSON.parse(storedUsers)
               }
@@ -118,7 +118,7 @@ function User(props: UserProps) {
     }
 
 
-    let formik = useFormik({
+    const formik = useFormik({
       initialValues: intialValues,
       validationSchema : Yup.object({
               firstName: Yup.string()
@@ -258,7 +258,7 @@ function User(props: UserProps) {
             </Button>
         </Grid>
         <Grid container item xs={12} justify="center" >
-          {submitting && (<CircularProgress></CircularProgress>)}
+          {submitting && (<CircularProgress />)}
         </Grid>
         <Grid item xs={12}>
           <SuccesOrFailureAlert 
