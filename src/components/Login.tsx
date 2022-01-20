@@ -30,7 +30,7 @@ function LoginButton({ user }: LoginProps) {
   };
 
   if (user == null) {
-    <Button
+    return <Button
       variant="contained"
       color="secondary"
       onClick={login}

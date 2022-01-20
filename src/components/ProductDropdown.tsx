@@ -295,7 +295,7 @@ export function ProductDropdown(props: ProductDropdownProps) {
   const [types, setTypes] = useState<string[]>([]);
   const [selectedType, setSelectedType] = useState<string>("");
 
-  const { response, error } = useFetchWithAuth(`${url}/books/items`, {
+  const { response, error } = useFetchWithAuth(`${url}/books`, {
     method: "GET",
   });
 
