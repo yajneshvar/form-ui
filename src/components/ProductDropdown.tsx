@@ -20,6 +20,7 @@ import {
   Paper,
   Popper,
   IconButton,
+  CircularProgress,
 } from "@material-ui/core";
 import { SelectedProductQuantity, Product } from "./models";
 import { useFetchWithAuth } from "../hooks/fetchWithAuth";
@@ -295,9 +296,11 @@ export function ProductDropdown(props: ProductDropdownProps) {
   const [types, setTypes] = useState<string[]>([]);
   const [selectedType, setSelectedType] = useState<string>("");
 
-  const { response, error } = useFetchWithAuth(`${url}/books`, {
+  const { response, status } = useFetchWithAuth(`${url}/books`, {
     method: "GET",
   });
+
+  const loading = status === "loading";
 
   // if (error) {
   //   throw error
@@ -371,11 +374,13 @@ export function ProductDropdown(props: ProductDropdownProps) {
             id="language-select"
             fullWidth
           >
-            {types.map((type) => (
-              <MenuItem key={type} value={type}>
-                {type}
-              </MenuItem>
-            ))}
+            {loading && <MenuItem disabled>Loading</MenuItem>}
+            {!loading &&
+              types.map((type) => (
+                <MenuItem key={type} value={type}>
+                  {type}
+                </MenuItem>
+              ))}
           </Select>
         </FormControl>
       </Grid>
@@ -385,6 +390,7 @@ export function ProductDropdown(props: ProductDropdownProps) {
             className={classes.product}
             options={filteredProductList as Product[]}
             value={product}
+            loading={loading}
             onChange={(event: any, newValue: any) => {
               setProduct(newValue);
             }}
@@ -394,6 +400,17 @@ export function ProductDropdown(props: ProductDropdownProps) {
                 {...params}
                 label="Choose a Product"
                 variant="outlined"
+                InputProps={{
+                  ...params.InputProps,
+                  endAdornment: (
+                    <>
+                      {loading ? (
+                        <CircularProgress color="inherit" size={20} />
+                      ) : null}
+                      {params.InputProps.endAdornment}
+                    </>
+                  ),
+                }}
               />
             )}
             getOptionLabel={(option) => `${option.title}`}
@@ -442,7 +459,7 @@ export function ProductDropdown(props: ProductDropdownProps) {
           color="secondary"
           onClick={onClickAdd}
         >
-          Add Product
+          Add Book
         </Button>
       </Grid>
     </>

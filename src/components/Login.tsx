@@ -30,14 +30,16 @@ function LoginButton({ user }: LoginProps) {
   };
 
   if (user == null) {
-    return <Button
-      variant="contained"
-      color="secondary"
-      onClick={login}
-      disableElevation
-    >
-      Sign In With Google
-    </Button>;
+    return (
+      <Button
+        variant="contained"
+        color="secondary"
+        onClick={login}
+        disableElevation
+      >
+        Sign In With Google
+      </Button>
+    );
   }
   // eslint-disable-next-line react/jsx-no-useless-fragment
   return <></>;

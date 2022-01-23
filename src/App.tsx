@@ -17,11 +17,15 @@ import { UpdateUser, UserList } from "./components/UserList";
 function HomePage() {
   return (
     <Grid container direction="column" justify="center" alignItems="center">
-      <Grid item xs={6}>
+      <Grid item xs={4}>
         {" "}
-        <NavLink to="/order">Order</NavLink>{" "}
+        <NavLink to="/order">Order with delivery</NavLink>{" "}
       </Grid>
-      <Grid item xs={6}>
+      <Grid item xs={4}>
+        {" "}
+        <NavLink to="/other">Order without delivery</NavLink>{" "}
+      </Grid>
+      <Grid item xs={4}>
         {" "}
         <NavLink to="/user">User</NavLink>{" "}
       </Grid>

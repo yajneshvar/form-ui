@@ -8,8 +8,15 @@ import React, {
 import TextField from "@material-ui/core/TextField";
 import Button from "@material-ui/core/Button";
 import Grid from "@material-ui/core/Grid";
-import Autocomplete from "@material-ui/lab/Autocomplete";
-import { makeStyles, createStyles, Theme } from "@material-ui/core/styles";
+import Autocomplete, {
+  createFilterOptions,
+} from "@material-ui/lab/Autocomplete";
+import {
+  makeStyles,
+  createStyles,
+  Theme,
+  useTheme,
+} from "@material-ui/core/styles";
 import {
   Select,
   MenuItem,
@@ -21,6 +28,11 @@ import {
   CircularProgress,
   TextareaAutosize,
   SnackbarCloseReason,
+  Dialog,
+  DialogTitle,
+  useMediaQuery,
+  DialogContent,
+  DialogActions,
 } from "@material-ui/core";
 import { FormikProps, withFormik } from "formik";
 import { string, object, number, array, boolean } from "yup";
@@ -30,6 +42,7 @@ import { ProductDropdownAndSelectedProducts } from "./ProductDropdown";
 import SuccessOrFailureAlert from "./SuccesOrFailureAlert";
 import { fetchWithAuth } from "../utils/auth";
 import { useFetchWithAuth } from "../hooks/fetchWithAuth";
+import UserForm from "./User";
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -159,22 +172,13 @@ function EnchancedOrder(orderProps: EnhancedOrderProps) {
         email: string().required(),
         // eslint-disable-next-line func-names
       })
-        .test(function (customer) {
-          // eslint-disable-next-line react/no-this-in-sfc
-          const { anonymousCustomer } = this.parent;
-          if (!anonymousCustomer) return customer != null;
-          return true;
+        .test((customer) => {
+          if (!orderProps.useAnonymousCustomer) return customer != null;
+          return orderProps.useAnonymousCustomer;
         })
         .nullable(),
       // eslint-disable-next-line func-names
-      anonymousCustomer: string()
-        .test(function (anonymousCustomer) {
-          // eslint-disable-next-line react/no-this-in-sfc
-          const { customer } = this.parent;
-          if (!customer) return anonymousCustomer != null;
-          return true;
-        })
-        .nullable(),
+      anonymousCustomer: string().nullable(),
       delivery: boolean().required(),
       channel: string().required(),
       additionalNotes: string().default(""),
@@ -257,19 +261,19 @@ export function OrderComponent(props: OrderProps & FormikProps<Order>) {
     window.addEventListener("storage", storageEventHandler);
     return () => {
       window.removeEventListener("storage", storageEventHandler);
+      localStorage.removeItem("latestCustomer");
     };
   });
 
-  useEffect(() => {
-    localStorage.removeItem("latestCustomer");
-  }, []);
+  const {
+    response: userPayload,
+    error: userError,
+    status,
+  } = useFetchWithAuth(`${url}/users`, {
+    method: "GET",
+  });
 
-  const { response: userPayload, error: userError } = useFetchWithAuth(
-    `${url}/users`,
-    {
-      method: "GET",
-    }
-  );
+  const loadingUser = status === "loading";
 
   useEffect(() => {
     if (userError) {
@@ -280,6 +284,8 @@ export function OrderComponent(props: OrderProps & FormikProps<Order>) {
       userPayload.json().then((users) => setCustomers(users));
     }
   }, [userPayload, userError]);
+
+  const userFilter = createFilterOptions<Customer>();
 
   const { response: channelPayload, error: channelError } = useFetchWithAuth(
     `${url}/channels`,
@@ -327,7 +333,12 @@ export function OrderComponent(props: OrderProps & FormikProps<Order>) {
 
   const onCustomerChange = useCallback(
     (event: any, newValue: any) => {
-      setFieldValue("customer", newValue);
+      console.log(newValue);
+      if (newValue?.id) {
+        setFieldValue("customer", newValue);
+      } else {
+        handleCustomerDialogOpen();
+      }
     },
     [setFieldValue]
   );
@@ -338,6 +349,24 @@ export function OrderComponent(props: OrderProps & FormikProps<Order>) {
     },
     [setFieldValue]
   );
+
+  const [openCustomerDialog, setOpenCustomerDialog] = React.useState(false);
+  const theme = useTheme();
+  const fullScreen = useMediaQuery(theme.breakpoints.down("md"));
+
+  const handleCustomerDialogOpen = () => {
+    setOpenCustomerDialog(true);
+  };
+
+  const handleCustomerDialogClose = useCallback(() => {
+    setOpenCustomerDialog(false);
+    let newCustomers: Customer[] = [];
+    const customerJson = window.localStorage.getItem("latestCustomer");
+    if (customerJson) {
+      newCustomers = JSON.parse(customerJson) as Customer[];
+      setCustomers([...newCustomers, ...customers]);
+    }
+  }, [customers]);
 
   const onProductsChange = useCallback(
     (productsAndQuantity: SelectedProductQuantity[]) => {
@@ -385,17 +414,35 @@ export function OrderComponent(props: OrderProps & FormikProps<Order>) {
           <Grid item xs={12} md={12} lg={12}>
             {!useAnonymousCustomer && (
               <Autocomplete
+                freeSolo
                 options={customers as Customer[]}
                 value={values.customer}
                 onChange={onCustomerChange}
-                renderOption={(option: any) => (
-                  <span>{`${option.firstName} - ${option.postalCode}`}</span>
-                )}
+                loading={loadingUser}
+                renderOption={(option: any) => {
+                  if (option.postalCode) {
+                    return (
+                      <span>{`${option.firstName} - ${option.postalCode}`}</span>
+                    );
+                  }
+                  return <span>{`${option.firstName}`}</span>;
+                }}
                 renderInput={(params) => (
                   <TextField
                     {...params}
                     label="Choose a Customer"
                     variant="outlined"
+                    InputProps={{
+                      ...params.InputProps,
+                      endAdornment: (
+                        <>
+                          {loadingUser ? (
+                            <CircularProgress color="inherit" size={20} />
+                          ) : null}
+                          {params.InputProps.endAdornment}
+                        </>
+                      ),
+                    }}
                   />
                 )}
                 getOptionLabel={(option) => option.firstName}
@@ -403,8 +450,40 @@ export function OrderComponent(props: OrderProps & FormikProps<Order>) {
                   option.firstName === value.firstName &&
                   option.email === value.email
                 }
+                filterOptions={(options, params) => {
+                  const filtered = userFilter(options, params);
+                  const isExisting = options.some(
+                    (opt) => opt.firstName === params.inputValue
+                  );
+                  if (params.inputValue !== "" && !isExisting) {
+                    filtered.push({
+                      id: "",
+                      firstName: `Add "${params.inputValue}"`,
+                      lastName: "",
+                      email: "",
+                      postalCode: "",
+                    });
+                  }
+                  return filtered;
+                }}
               />
             )}
+            <Dialog
+              fullScreen={fullScreen}
+              open={openCustomerDialog}
+              onClose={handleCustomerDialogClose}
+              aria-labelledby="responsive-dialog-title"
+            >
+              <DialogTitle id="responsive-dialog-title">Add User</DialogTitle>
+              <DialogContent>
+                <UserForm user={undefined} />
+              </DialogContent>
+              <DialogActions>
+                <Button autoFocus onClick={handleCustomerDialogClose}>
+                  Close
+                </Button>
+              </DialogActions>
+            </Dialog>
             {!useAnonymousCustomer && errors.customer && touched.customer && (
               <Typography
                 className={classes.errorMessage}
